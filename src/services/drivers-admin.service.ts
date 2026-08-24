@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
+import { AuthService } from "@/services/auth.service";
 import type { Driver, DriverFormData, CustomerOption } from "@/types/database.types";
 
 export const DRIVERS_PAGE_SIZE = 10;
@@ -53,22 +54,40 @@ export async function getNextDriverNumber(customerId: string | number): Promise<
 export async function createDriver(formData: DriverFormData) {
   try {
     if (!String(formData.name ?? "").trim()) return { data: null, error: { message: "ФИО водителя обязательно." } };
-    if (!String(formData.login ?? "").trim()) return { data: null, error: { message: "Логин обязателен." } };
     if (!String(formData.password ?? "").trim()) return { data: null, error: { message: "Пароль обязателен." } };
 
     const nextNumber = await getNextDriverNumber(formData.customer_id);
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
 
-    const { data: userData, error: userError } = await supabase.from("users").insert({ login: formData.login, password: formData.password, role: "driver" }).select().maybeSingle();
+    const session = AuthService.getSession();
+    if (!session || session.role !== "admin") {
+      return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+    }
+
+    // Пользователи хранятся только в public.users. Создание выполняется
+    // через SECURITY DEFINER RPC, которая проверяет p_admin_id в public.users.
+    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", {
+      p_admin_id: Number(session.id),
+      p_login: nextNumber.number,
+      p_password: String(formData.password).trim(),
+    });
+
     if (userError) return { data: null, error: userError };
-    if (!userData) return { data: null, error: { message: "Не удалось создать пользователя." } };
+    if (!userData) return { data: null, error: { message: "Не удалось создать пользователя водителя." } };
 
     const { data: driverData, error: driverError } = await supabase.from("drivers").insert({
       name: formData.name, car_brand: formData.car_brand, car_number: formData.car_number, customer_id: Number(formData.customer_id), user_id: userData.id,
       driver_id: nextNumber.number, insurance_expiry: formData.insurance_expiry || null, license_expiry: formData.license_expiry || null,
       license_number: formData.license_number || null, medical_expiry: formData.medical_expiry || null, tech_inspection_expiry: formData.tech_inspection_expiry || null,
     }).select().maybeSingle();
-    if (driverError) { await supabase.from("users").delete().eq("id", userData.id); return { data: null, error: driverError }; }
+
+    if (driverError) {
+      // Не падаем на удалении пользователя, если RLS не разрешает удаление:
+      // основная ошибка создания водителя должна быть возвращена вызывающему коду.
+      console.error("Ошибка при создании записи водителя после создания users:", driverError);
+      return { data: null, error: driverError };
+    }
+
     return { data: driverData, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
