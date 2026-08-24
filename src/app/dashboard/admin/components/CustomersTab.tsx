@@ -3,11 +3,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Plus, Edit, Trash2, Mail, X, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Mail, X, ChevronLeft, ChevronRight, FileText, Wallet } from "lucide-react";
 import { DatabaseCustomer } from "../../../../types/database.types";
 import { fetchCustomers, deleteCustomerRecord, createCustomer, updateCustomer, CUSTOMERS_PAGE_SIZE } from "../../../../services/customers-admin.service";
 import CustomerModal from "../components/ui/CustomerEditModal";
 import DeleteCustomerModal from "../components/ui/DeleteCustomerModal";
+import CustomerBalanceTopUpModal from "../components/ui/CustomerBalanceTopUpModal";
 
 const SEARCH_DEBOUNCE_MS = 350;
 
@@ -33,6 +34,8 @@ export default function CustomersTab() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [balanceCustomer, setBalanceCustomer] = useState<DatabaseCustomer | null>(null);
+  const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const latestRequestId = useRef(0);
 
   useEffect(() => {
@@ -114,7 +117,15 @@ export default function CustomersTab() {
   const openCreate = () => { setEditingCustomer(null); setIsModalOpen(true); };
   const openEdit = (customer: DatabaseCustomer) => { setEditingCustomer(customer); setIsModalOpen(true); };
   const openDelete = (customer: DatabaseCustomer) => { setDeletingCustomer(customer); setDeleteError(null); setIsDeleteModalOpen(true); };
+  const openBalance = (customer: DatabaseCustomer) => { setBalanceCustomer(customer); setIsBalanceModalOpen(true); };
   const closeDelete = () => { if (deleteLoading) return; setIsDeleteModalOpen(false); setDeletingCustomer(null); setDeleteError(null); };
+  const closeBalance = () => { setIsBalanceModalOpen(false); setBalanceCustomer(null); };
+
+  const handleBalanceSuccess = (newBalance: number) => {
+    if (!balanceCustomer) return;
+    setCustomers((prev) => prev.map((customer) => customer.id === balanceCustomer.id ? { ...customer, balance: newBalance } : customer));
+    setBalanceCustomer((prev) => prev ? { ...prev, balance: newBalance } : prev);
+  };
 
   return (
     <div className="w-full px-2 sm:px-4 md:px-0">
@@ -145,12 +156,13 @@ export default function CustomersTab() {
         <>
           <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm sm:block">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-left text-sm">
+              <table className="w-full min-w-[1020px] text-left text-sm">
                 <thead className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   <tr>
                     <th className="px-4 py-4">Заказчик</th>
                     <th className="w-32 px-4 py-4">УНП</th>
                     <th className="w-40 px-4 py-4">Реквизиты договора</th>
+                    <th className="w-36 px-4 py-4">Баланс</th>
                     <th className="px-4 py-4">Контакты</th>
                     <th className="w-36 px-4 py-4 text-center">Действия</th>
                   </tr>
@@ -162,19 +174,18 @@ export default function CustomersTab() {
                         <div className="flex items-start gap-2.5">
                           <span className="inline-flex shrink-0 items-center justify-center rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-700 shadow-sm">{cust.number ? `№${cust.number}` : "—"}</span>
                           <div className="min-w-0">
-                            <div className="font-semibold text-slate-900">
-                              {cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}
-                              <span>{cust.name}</span>
-                            </div>
+                            <div className="font-semibold text-slate-900">{cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}<span>{cust.name}</span></div>
                             {cust.address && <div className="mt-0.5 line-clamp-1 text-xs text-slate-500">{cust.address}</div>}
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-4 font-mono text-xs text-slate-700">{cust.unp || "—"}</td>
                       <td className="px-4 py-4 text-xs">{cust.contract_number ? <><div className="font-medium text-slate-800">№ {cust.contract_number}</div>{cust.contract_date && <div className="text-[10px] text-slate-400">от {cust.contract_date}</div>}</> : <span className="text-slate-400">—</span>}</td>
+                      <td className="px-4 py-4"><div className="flex items-center gap-2"><div><div className="font-semibold text-slate-900">{Number(cust.balance || 0).toFixed(2)} BYN</div><div className="text-[10px] text-slate-400">текущий баланс</div></div><button type="button" onClick={() => openBalance(cust)} title="Пополнить баланс" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"><Wallet size={15} /></button></div></td>
                       <td className="px-4 py-4 text-xs">{cust.contact_person && <div className="font-medium text-slate-800">{cust.contact_person}</div>}{cust.phone && <div className="text-slate-600">{cust.phone}</div>}{cust.email && <div className="mt-0.5 flex items-center gap-1 text-slate-400"><Mail size={12} /><span className="max-w-[150px] truncate">{cust.email}</span></div>}</td>
                       <td className="px-4 py-4"><div className="flex w-full flex-col items-center justify-center gap-1.5">
                         <button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"><FileText size={14} className="shrink-0 text-slate-500" />Договор</button>
+                        <button type="button" onClick={() => openBalance(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100"><Wallet size={14} className="shrink-0 text-emerald-600" />Пополнить</button>
                         <button type="button" onClick={() => openEdit(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-2 py-1.5 text-xs font-medium text-sky-800 shadow-sm transition-colors hover:bg-sky-100"><Edit size={14} className="shrink-0 text-sky-600" />Изменить</button>
                         <button type="button" onClick={() => openDelete(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#C53030]/20 bg-[#C53030]/5 px-2 py-1.5 text-xs font-medium text-[#C53030] shadow-sm transition-colors hover:bg-[#C53030]/10"><Trash2 size={14} className="shrink-0" />Удалить</button>
                       </div></td>
@@ -202,6 +213,7 @@ export default function CustomersTab() {
                     <div className="min-w-0"><div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">УНП</div><div className="truncate font-mono text-xs font-medium text-slate-700">{cust.unp || "—"}</div></div>
                     <div className="min-w-0"><div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Договор</div>{cust.contract_number ? <div className="text-xs font-medium text-slate-700">№ {cust.contract_number}{cust.contract_date && <span className="ml-1 text-[10px] font-normal text-slate-400">от {cust.contract_date}</span>}</div> : <div className="text-xs text-slate-400">Не указан</div>}</div>
                   </div>
+                  <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50/70 p-3"><div><div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/60">Баланс</div><div className="mt-0.5 text-sm font-bold text-emerald-900">{Number(cust.balance || 0).toFixed(2)} BYN</div></div><button type="button" onClick={() => openBalance(cust)} className="flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"><Wallet size={14} />Пополнить</button></div>
                   {(cust.contact_person || cust.phone || cust.email) && <div className="mt-4 rounded-xl bg-slate-50/80 p-3"><div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Контакты</div>{cust.contact_person && <div className="text-xs font-semibold text-slate-800">{cust.contact_person}</div>}{cust.phone && <a href={`tel:${cust.phone}`} className="mt-1 block text-xs text-slate-600">{cust.phone}</a>}{cust.email && <a href={`mailto:${cust.email}`} className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500"><Mail size={13} className="shrink-0" /><span className="truncate">{cust.email}</span></a>}</div>}
                 </div>
                 <div className="grid grid-cols-3 gap-2 border-t border-slate-100 bg-slate-50/50 p-3">
@@ -223,6 +235,7 @@ export default function CustomersTab() {
 
       <CustomerModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingCustomer(null); }} customer={editingCustomer} onSave={handleSaveCustomer} />
       <DeleteCustomerModal isOpen={isDeleteModalOpen} customer={deletingCustomer} loading={deleteLoading} errorMessage={deleteError} onClose={closeDelete} onConfirm={handleDeleteConfirm} />
+      <CustomerBalanceTopUpModal isOpen={isBalanceModalOpen} customer={balanceCustomer} onClose={closeBalance} onSuccess={handleBalanceSuccess} />
     </div>
   );
 }
