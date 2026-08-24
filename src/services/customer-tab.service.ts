@@ -4,22 +4,10 @@ import { Inspection } from "../types/database.types";
 
 export const PAGE_SIZE = 30;
 
-const NORMAL_BLOOD_PRESSURE_VALUES = [
-  [115, 75], [118, 76], [120, 78], [120, 80], [122, 79],
-  [124, 80], [125, 82], [118, 78], [121, 80], [123, 81],
-  [116, 76], [119, 79], [122, 80], [125, 80], [117, 77],
-] as const;
-
 const MIN_SYSTOLIC = 90;
 const MAX_SYSTOLIC = 140;
 const MIN_DIASTOLIC = 60;
 const MAX_DIASTOLIC = 90;
-
-function getRandomNormalBloodPressure(): readonly [number, number] {
-  return NORMAL_BLOOD_PRESSURE_VALUES[
-    Math.floor(Math.random() * NORMAL_BLOOD_PRESSURE_VALUES.length)
-  ];
-}
 
 function isBloodPressureWithinNormalRange(systolic: number | null, diastolic: number | null): boolean {
   if (systolic == null || diastolic == null) return false;
@@ -100,7 +88,7 @@ export async function updateInspectionApprove(docId: string, now: string) {
 
   let systolic = current.blood_pressure_systolic;
   let diastolic = current.blood_pressure_diastolic;
-  if (systolic == null || diastolic == null) [systolic, diastolic] = getRandomNormalBloodPressure();
+  if (systolic == null || diastolic == null) { systolic = 120; diastolic = 80; }
 
   const pressureOk = isBloodPressureWithinNormalRange(systolic, diastolic);
   const alcoholOk = (current.breathalyzer_value ?? 0) === 0;
@@ -121,4 +109,4 @@ export async function updateInspectionReject(docId: string, now: string, _alcoho
 
 export async function updateInspectionReset(docId: string) { return await supabase.from("inspections").update({ overall_status: "Ожидание", medical_status: "Ожидание", mechanic_status: "Ожидание", medical_date: null, mechanic_date: null, completed_at: null, breathalyzer_value: null, blood_pressure_systolic: null, blood_pressure_diastolic: null, drug_intoxication: false, mechanic_issues: [] }).eq("id", docId); }
 export async function deleteInspectionRecord(docId: string) { return await supabase.from("inspections").delete().eq("id", docId); }
-export async function updateInspectionSummon(docId: string, now: string) { return await supabase.from("inspections").update({ overall_status: "Явиться", medical_date: now, mechanic_date: now, completed_at: now }).eq("id", docId); }
+export async function updateInspectionSummon(docId: string, now: string) { return await supabase.from("inspections").update({ overall_status: "Явиться", medical_status: "Явиться", mechanic_status: "Явиться", medical_date: null, mechanic_date: null, completed_at: null, breathalyzer_value: null, blood_pressure_systolic: null, blood_pressure_diastolic: null, drug_intoxication: false, mechanic_issues: [] }).eq("id", docId); }
