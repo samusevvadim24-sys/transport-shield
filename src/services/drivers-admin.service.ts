@@ -36,10 +36,8 @@ export async function getNextDriverNumber(customerId: string | number): Promise<
     if (customerError) return { number: null, error: customerError };
     const customerNumber = String(customer?.number ?? "").trim();
     if (!customerNumber) return { number: null, error: new Error("У выбранного заказчика не указан номер.") };
-
     const { data: drivers, error } = await supabase.from("drivers").select("driver_id").eq("customer_id", Number(customerId));
     if (error) return { number: null, error };
-
     const used = new Set<number>();
     for (const row of drivers ?? []) {
       const value = String(row.driver_id ?? "");
@@ -60,34 +58,39 @@ export async function createDriver(formData: DriverFormData) {
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
 
     const session = AuthService.getSession();
-    if (!session || session.role !== "admin") {
-      return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
-    }
+    if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
 
-    // Пользователи хранятся только в public.users. Создание выполняется
-    // через SECURITY DEFINER RPC, которая проверяет p_admin_id в public.users.
     const { data: userData, error: userError } = await supabase.rpc("create_driver_user", {
       p_admin_id: Number(session.id),
       p_login: nextNumber.number,
       p_password: String(formData.password).trim(),
     });
-
     if (userError) return { data: null, error: userError };
     if (!userData) return { data: null, error: { message: "Не удалось создать пользователя водителя." } };
 
-    const { data: driverData, error: driverError } = await supabase.from("drivers").insert({
-      name: formData.name, car_brand: formData.car_brand, car_number: formData.car_number, customer_id: Number(formData.customer_id), user_id: userData.id,
-      driver_id: nextNumber.number, insurance_expiry: formData.insurance_expiry || null, license_expiry: formData.license_expiry || null,
-      license_number: formData.license_number || null, medical_expiry: formData.medical_expiry || null, tech_inspection_expiry: formData.tech_inspection_expiry || null,
-    }).select().maybeSingle();
+    // Запись drivers тоже создаём через SECURITY DEFINER RPC, чтобы RLS
+    // public.drivers не требовал прямого INSERT из браузера.
+    const { data: driverData, error: driverError } = await supabase.rpc("create_driver_record", {
+      p_admin_id: Number(session.id),
+      p_user_id: Number(userData.id),
+      p_name: String(formData.name).trim(),
+      p_car_brand: String(formData.car_brand ?? "").trim(),
+      p_car_number: String(formData.car_number ?? "").trim(),
+      p_customer_id: Number(formData.customer_id),
+      p_driver_id: nextNumber.number,
+      p_insurance_expiry: String(formData.insurance_expiry ?? ""),
+      p_license_expiry: String(formData.license_expiry ?? ""),
+      p_license_number: String(formData.license_number ?? ""),
+      p_medical_expiry: String(formData.medical_expiry ?? ""),
+      p_tech_inspection_expiry: String(formData.tech_inspection_expiry ?? ""),
+    });
 
     if (driverError) {
-      // Не падаем на удалении пользователя, если RLS не разрешает удаление:
-      // основная ошибка создания водителя должна быть возвращена вызывающему коду.
-      console.error("Ошибка при создании записи водителя после создания users:", driverError);
+      console.error("Ошибка при создании записи водителя:", driverError);
       return { data: null, error: driverError };
     }
 
+    if (!driverData) return { data: null, error: { message: "Не удалось создать запись водителя." } };
     return { data: driverData, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
