@@ -15,7 +15,7 @@ interface RejectInspectionModalProps {
   onExecute: () => void;
 }
 
-export default function RejectInspectionModal({ isOpen, inspection, rejectReasons, onClose, onAlcoholKeyDown, getFormattedAlcoholNumber, setRejectReasons, onExecute }: RejectInspectionModalProps) {
+export default function RejectInspectionModal({ isOpen, inspection, rawAlcoholDigits, rejectReasons, onClose, onAlcoholKeyDown, getFormattedAlcoholNumber, setRejectReasons, onExecute }: RejectInspectionModalProps) {
   const [systolic, setSystolic] = useState("120");
   const [diastolic, setDiastolic] = useState("80");
   const [drugIntoxication, setDrugIntoxication] = useState(false);
@@ -30,12 +30,28 @@ export default function RejectInspectionModal({ isOpen, inspection, rejectReason
 
   if (!isOpen || !inspection) return null;
 
+  const alcoholValue = rawAlcoholDigits === "015" ? 0 : getFormattedAlcoholNumber();
+  const alcoholDisplay = rawAlcoholDigits === "015" ? "0.00" : alcoholValue.toFixed(2);
   const systolicNumber = systolic.trim() ? Number(systolic) : null;
   const diastolicNumber = diastolic.trim() ? Number(diastolic) : null;
   const hasPressure = systolicNumber !== null && diastolicNumber !== null && Number.isFinite(systolicNumber) && Number.isFinite(diastolicNumber);
   const pressureOutOfRange = !hasPressure || systolicNumber < 90 || systolicNumber > 140 || diastolicNumber < 60 || diastolicNumber > 90;
-  const medicalNotAdmitted = pressureOutOfRange || drugIntoxication || getFormattedAlcoholNumber() !== 0;
+  const medicalNotAdmitted = pressureOutOfRange || drugIntoxication || alcoholValue !== 0;
   const mechanicNotAdmitted = Object.values(rejectReasons).some(Boolean);
+
+  const handleAlcoholInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (rawAlcoholDigits === "015" && e.key >= "0" && e.key <= "9") {
+      e.preventDefault();
+      const backspaceEvent = new KeyboardEvent("keydown", { key: "Backspace" });
+      onAlcoholKeyDown(backspaceEvent as unknown as React.KeyboardEvent<HTMLInputElement>);
+      onAlcoholKeyDown(backspaceEvent as unknown as React.KeyboardEvent<HTMLInputElement>);
+      onAlcoholKeyDown(backspaceEvent as unknown as React.KeyboardEvent<HTMLInputElement>);
+      const digitEvent = new KeyboardEvent("keydown", { key: e.key });
+      onAlcoholKeyDown(digitEvent as unknown as React.KeyboardEvent<HTMLInputElement>);
+      return;
+    }
+    onAlcoholKeyDown(e);
+  };
 
   const handleExecute = async () => {
     if (!hasPressure) { alert("Укажите оба показания давления."); return; }
@@ -45,7 +61,6 @@ export default function RejectInspectionModal({ isOpen, inspection, rejectReason
     setSavingMedical(true);
     try {
       const now = new Date().toISOString();
-      const alcoholValue = getFormattedAlcoholNumber();
       const { error } = await updateInspectionMedical(inspection.docId, now, alcoholValue, systolicNumber, diastolicNumber, drugIntoxication);
       if (error) { alert(`Не удалось сохранить медицинские показатели: ${error.message}`); return; }
       onExecute();
@@ -62,7 +77,7 @@ export default function RejectInspectionModal({ isOpen, inspection, rejectReason
           <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5">
             <div className="mb-3 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-teal-800"><Wine size={15} /><span>Медицинский осмотр</span></div>
             <div className="space-y-3">
-              <div><label className="mb-1 block text-xs font-medium text-slate-700">Показания алкотестера (мг/л): <span className="text-[10px] text-slate-400">(вводите цифры с клавиатуры)</span></label><input type="text" readOnly onKeyDown={onAlcoholKeyDown} value={getFormattedAlcoholNumber().toFixed(2)} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base font-mono font-bold text-slate-900 outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" placeholder="0.00" /></div>
+              <div><label className="mb-1 block text-xs font-medium text-slate-700">Показания алкотестера (мг/л): <span className="text-[10px] text-slate-400">(вводите цифры с клавиатуры)</span></label><input type="text" readOnly onKeyDown={handleAlcoholInputKeyDown} value={alcoholDisplay} className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-base font-mono font-bold text-slate-900 outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" placeholder="0.00" /></div>
               <div>
                 <div className="mb-1 flex items-center gap-2 text-xs font-medium text-slate-700"><Activity size={14} className="text-teal-700" /><span>Артериальное давление (мм рт. ст.)</span></div>
                 <div className="grid grid-cols-2 gap-2">
