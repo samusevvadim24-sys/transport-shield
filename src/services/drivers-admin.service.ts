@@ -47,7 +47,24 @@ export async function fetchDrivers({
       `driver_id.ilike.%${cleanSearch}%,` +
       `license_number.ilike.%${cleanSearch}%`;
 
-    query = query.or(conditions);
+    // Ищем также по названию заказчика. Вложенное поле customer.name
+    // нельзя безопасно передать в .or() основного запроса, поэтому
+    // сначала получаем ID подходящих компаний, а затем фильтруем водителей.
+    const { data: matchingCustomers, error: customerSearchError } = await supabase
+      .from("customers")
+      .select("id")
+      .ilike("name", `%${cleanSearch}%`);
+
+    if (customerSearchError) {
+      console.error("Ошибка поиска заказчика для водителей:", customerSearchError);
+    }
+
+    if (matchingCustomers && matchingCustomers.length > 0) {
+      const customerIds = matchingCustomers.map((customer) => customer.id);
+      query = query.or(`${conditions},customer_id.in.(${customerIds.join(",")})`);
+    } else {
+      query = query.or(conditions);
+    }
   }
 
   const { data, error, count } = await query
@@ -93,21 +110,15 @@ export async function createDriver(formData: DriverFormData) {
       return { data: null, error: { message: "Пароль обязателен." } };
     }
 
-    // Создаем пользователя
     const { data: userData, error: userError } = await supabase
       .from("users")
-      .insert({
-        login: formData.login,
-        password: formData.password,
-        role: "driver",
-      })
+      .insert({ login: formData.login, password: formData.password, role: "driver" })
       .select()
       .maybeSingle();
 
     if (userError) return { data: null, error: userError };
     if (!userData) return { data: null, error: { message: "Не удалось создать пользователя." } };
 
-    // Создаем водителя
     const { data: driverData, error: driverError } = await supabase
       .from("drivers")
       .insert({
@@ -127,7 +138,6 @@ export async function createDriver(formData: DriverFormData) {
       .maybeSingle();
 
     if (driverError) {
-      // Откат создания пользователя при ошибке водителя
       await supabase.from("users").delete().eq("id", userData.id);
       return { data: null, error: driverError };
     }
@@ -196,9 +206,7 @@ export async function deleteDriverRecord(
       .delete()
       .eq("id", id);
 
-    if (driverError) {
-      return { error: driverError };
-    }
+    if (driverError) return { error: driverError };
 
     if (userId) {
       const { error: userError } = await supabase
