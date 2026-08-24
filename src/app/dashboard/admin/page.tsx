@@ -36,31 +36,31 @@ export default function AdminDashboardPage(): JSX.Element {
   }, [activeTab]);
 
   useEffect(() => {
-    const handleOpenCustomer = (event: Event) => {
+    const handleOpenCustomerDrivers = (event: Event) => {
       const customerName = (event as CustomEvent<string>).detail;
       if (!customerName) return;
       setSelectedCustomerId(customerName);
-      setActiveTab("customers");
+      setActiveTab("drivers");
     };
-    window.addEventListener("transport-shield:open-customer", handleOpenCustomer);
-    return () => window.removeEventListener("transport-shield:open-customer", handleOpenCustomer);
+    window.addEventListener("transport-shield:open-customer", handleOpenCustomerDrivers);
+    return () => window.removeEventListener("transport-shield:open-customer", handleOpenCustomerDrivers);
   }, []);
 
   useEffect(() => {
-    if (activeTab !== "customers" || !selectedCustomerId) return;
+    if (activeTab !== "drivers" || !selectedCustomerId) return;
     const timer = window.setTimeout(() => {
-      const input = document.querySelector('input[placeholder="Поиск по номеру, названию, УНП..."]') as HTMLInputElement | null;
+      const input = document.querySelector('input[placeholder="Поиск по ФИО, номеру, авто..."]') as HTMLInputElement | null;
       if (!input) return;
       const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
       valueSetter?.call(input, selectedCustomerId);
       input.dispatchEvent(new Event("input", { bubbles: true }));
       input.dispatchEvent(new Event("change", { bubbles: true }));
-    }, 50);
+    }, 100);
     return () => window.clearTimeout(timer);
   }, [activeTab, selectedCustomerId]);
 
   const handleLogout = () => { localStorage.removeItem("currentUser"); localStorage.removeItem("ts_user_session"); router.push("/"); };
-  const handleCustomerClick = (customerName: string) => { if (!customerName) return; setSelectedCustomerId(customerName); setActiveTab("customers"); };
+  const handleCustomerClick = (customerName: string) => { if (!customerName) return; setSelectedCustomerId(customerName); setActiveTab("drivers"); };
 
   if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#042433]" /><p className="text-sm">Проверка доступа...</p></div></div>;
 
