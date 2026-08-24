@@ -99,6 +99,9 @@ export interface DatabaseInspection {
   medical_status: string | null;
   medical_date: string | null;
   breathalyzer_value: number | null;
+  blood_pressure_systolic: number | null;
+  blood_pressure_diastolic: number | null;
+  drug_intoxication: boolean;
   mechanic_status: string | null;
   mechanic_date: string | null;
   mechanic_issues: string[] | null;
@@ -128,6 +131,9 @@ export interface Inspection {
   medicTime: string;
   medicStatus: InspectionStatus;
   alcohol: number | null;
+  bloodPressureSystolic: number | null;
+  bloodPressureDiastolic: number | null;
+  drugIntoxication: boolean;
   mechanic: string;
   mechanicTime: string;
   mechanicStatus: InspectionStatus;
