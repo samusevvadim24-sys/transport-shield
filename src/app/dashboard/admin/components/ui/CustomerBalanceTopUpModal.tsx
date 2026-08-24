@@ -2,8 +2,8 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { X, Wallet } from "lucide-react";
-import { DatabaseCustomer } from "../../../../types/database.types";
-import { topUpCustomerBalance } from "../../../../services/customers-admin.service";
+import { DatabaseCustomer } from "../../../../../types/database.types";
+import { topUpCustomerBalance } from "../../../../../services/customers-admin.service";
 
 interface CustomerBalanceTopUpModalProps {
   isOpen: boolean;
