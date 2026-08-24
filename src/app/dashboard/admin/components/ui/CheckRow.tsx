@@ -53,6 +53,8 @@ export function CheckRow({
     }
   };
 
+  const hasBloodPressure = item.bloodPressureSystolic != null && item.bloodPressureDiastolic != null;
+
   return (
     <tr className={`group transition-all hover:bg-slate-50/80 ${isApproved ? "bg-emerald-50/20" : ""}`}>
       <td className="px-4 py-4 text-center align-middle">
@@ -110,7 +112,6 @@ export function CheckRow({
 
       <td className="px-4 py-4 align-middle">
         <div className="grid grid-cols-2 gap-3">
-          {/* Блок медика */}
           <div className="flex flex-col justify-between rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
             <div className="flex items-start gap-2">
               <div className="rounded-md bg-teal-50 p-1 text-teal-700">
@@ -122,15 +123,25 @@ export function CheckRow({
               </div>
             </div>
             {item.medicTime !== "—" && (
-              <div className="mt-2 flex items-center gap-1.5 rounded bg-slate-50 px-2 py-1 text-[11px]">
-                <Wine size={13} className="text-rose-500" />
-                <span className="text-slate-600">Алкоголь:</span>
-                <strong className="font-semibold text-slate-900">{item.alcohol ?? "0.0"}</strong>
+              <div className="mt-2 space-y-1 rounded bg-slate-50 px-2 py-1.5 text-[11px]">
+                {hasBloodPressure && (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-slate-600">Давление:</span>
+                    <strong className="font-semibold text-slate-900">
+                      {item.bloodPressureSystolic} / {item.bloodPressureDiastolic}
+                    </strong>
+                    <span className="text-slate-400">мм рт. ст.</span>
+                  </div>
+                )}
+                <div className="flex items-center gap-1.5">
+                  <Wine size={13} className="text-rose-500" />
+                  <span className="text-slate-600">Алкоголь:</span>
+                  <strong className="font-semibold text-slate-900">{item.alcohol ?? "0.0"}</strong>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Блок механика */}
           <div className="flex flex-col justify-between rounded-lg border border-slate-100 bg-white p-2.5 shadow-sm">
             <div className="flex items-start gap-2">
               <div className="rounded-md bg-amber-50 p-1 text-amber-700">
@@ -165,48 +176,23 @@ export function CheckRow({
           <div className="mt-1 flex flex-col items-stretch gap-1.5 w-full">
             {isWaiting ? (
               <>
-                <button
-                  type="button"
-                  onClick={() => onApprove(item.docId)}
-                  className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#2F855A] px-2 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#276749]"
-                >
-                  <CheckIcon size={14} />
-                  Допустить
+                <button type="button" onClick={() => onApprove(item.docId)} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-[#2F855A] px-2 py-2 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#276749]">
+                  <CheckIcon size={14} /> Допустить
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onReject(item.docId)}
-                  className="flex w-full cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C53030] px-2 py-2 text-xs font-medium text-white shadow-md transition-all hover:bg-[#9B2C2C] hover:shadow-lg active:scale-95"
-                >
-                  <X size={14} />
-                  Не допустить
+                <button type="button" onClick={() => onReject(item.docId)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#C53030] px-2 py-2 text-xs font-medium text-white shadow-md transition-all hover:bg-[#9B2C2C] hover:shadow-lg active:scale-95">
+                  <X size={14} /> Не допустить
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onSummon?.(item)}
-                  className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-xs font-medium text-amber-700 shadow-sm transition-colors hover:bg-amber-100"
-                >
-                  <Bell size={14} />
-                  Явиться
+                <button type="button" onClick={() => onSummon?.(item)} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-xs font-medium text-amber-700 shadow-sm transition-colors hover:bg-amber-100">
+                  <Bell size={14} /> Явиться
                 </button>
               </>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => onResetStatus(item.docId)}
-                  className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-2 text-xs font-medium text-amber-800 shadow-sm transition-colors hover:bg-amber-100"
-                >
-                  <RotateCcw size={14} />
-                  В ожидание
+                <button type="button" onClick={() => onResetStatus(item.docId)} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-2 text-xs font-medium text-amber-800 shadow-sm transition-colors hover:bg-amber-100">
+                  <RotateCcw size={14} /> В ожидание
                 </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(item)}
-                  className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#C53030]/20 bg-[#C53030]/5 px-2 py-2 text-xs font-medium text-[#C53030] shadow-sm transition-colors hover:bg-[#C53030]/10"
-                >
-                  <Trash2 size={14} />
-                  Удалить
+                <button type="button" onClick={() => onDelete(item)} className="flex cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#C53030]/20 bg-[#C53030]/5 px-2 py-2 text-xs font-medium text-[#C53030] shadow-sm transition-colors hover:bg-[#C53030]/10">
+                  <Trash2 size={14} /> Удалить
                 </button>
               </>
             )}
