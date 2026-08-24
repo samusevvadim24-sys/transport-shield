@@ -20,10 +20,29 @@ function displayDate(value: string) {
   return `${digits.slice(0, 2)}.${digits.slice(2, 4)}.${digits.slice(4)}`;
 }
 
-function parseDisplayDate(value: string) {
+function parseDisplayDate(value: string): string | null {
   const digits = value.replace(/\D/g, "").slice(0, 8);
-  if (digits.length !== 8) return value;
-  return `${digits.slice(4, 8)}-${digits.slice(2, 4)}-${digits.slice(0, 2)}`;
+  if (digits.length !== 8) return null;
+
+  const day = Number(digits.slice(0, 2));
+  const month = Number(digits.slice(2, 4));
+  const year = Number(digits.slice(4, 8));
+  const date = new Date(year, month - 1, day);
+
+  if (
+    year < 1900 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31 ||
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
 function formatDateTime(value: string | null | undefined) {
@@ -58,16 +77,25 @@ function statusTextClass(status: string | null | undefined) {
 
 export default function DriverHistoryModal({ isOpen, driver, onClose }: Props) {
   const today = useMemo(() => new Date(), []);
-  const [startDate, setStartDate] = useState(() => toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)));
-  const [endDate, setEndDate] = useState(() => toDateInput(today));
+  const initialStartDate = toDateInput(new Date(today.getFullYear(), today.getMonth(), 1));
+  const initialEndDate = toDateInput(today);
+  const [startDate, setStartDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate);
+  const [startInput, setStartInput] = useState(displayDate(initialStartDate));
+  const [endInput, setEndInput] = useState(displayDate(initialEndDate));
   const [items, setItems] = useState<DatabaseInspection[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    setStartDate(toDateInput(new Date(today.getFullYear(), today.getMonth(), 1)));
-    setEndDate(toDateInput(today));
+    const nextStart = toDateInput(new Date(today.getFullYear(), today.getMonth(), 1));
+    const nextEnd = toDateInput(today);
+    setStartDate(nextStart);
+    setEndDate(nextEnd);
+    setStartInput(displayDate(nextStart));
+    setEndInput(displayDate(nextEnd));
+    setError(null);
   }, [isOpen, today]);
 
   useEffect(() => {
@@ -96,8 +124,36 @@ export default function DriverHistoryModal({ isOpen, driver, onClose }: Props) {
 
   const setPeriod = () => {
     const now = new Date();
-    setStartDate(toDateInput(new Date(now.getFullYear(), now.getMonth(), 1)));
-    setEndDate(toDateInput(new Date(now.getFullYear(), now.getMonth() + 1, 0)));
+    const nextStart = toDateInput(new Date(now.getFullYear(), now.getMonth(), 1));
+    const nextEnd = toDateInput(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    setStartDate(nextStart);
+    setEndDate(nextEnd);
+    setStartInput(displayDate(nextStart));
+    setEndInput(displayDate(nextEnd));
+    setError(null);
+  };
+
+  const handleDateInput = (value: string, type: "start" | "end") => {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    const formatted = displayDate(digits);
+
+    if (type === "start") setStartInput(formatted);
+    else setEndInput(formatted);
+
+    if (digits.length < 8) {
+      setError(null);
+      return;
+    }
+
+    const parsed = parseDisplayDate(digits);
+    if (!parsed) {
+      setError("Введите корректные даты");
+      return;
+    }
+
+    setError(null);
+    if (type === "start") setStartDate(parsed);
+    else setEndDate(parsed);
   };
 
   const stats = {
@@ -107,8 +163,6 @@ export default function DriverHistoryModal({ isOpen, driver, onClose }: Props) {
     appear: items.filter((x) => x.overall_status === "Явиться").length,
   };
 
-  const setDisplayStart = (value: string) => setStartDate(parseDisplayDate(value));
-  const setDisplayEnd = (value: string) => setEndDate(parseDisplayDate(value));
   const visibleItems = items.slice(0, 10);
 
   return (
@@ -129,9 +183,9 @@ export default function DriverHistoryModal({ isOpen, driver, onClose }: Props) {
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
                 <CalendarDays size={14} className="text-slate-400" /><span className="text-xs text-slate-500">Период:</span>
-                <input inputMode="numeric" placeholder="ДД.ММ.ГГГГ" maxLength={10} value={displayDate(startDate)} onChange={(e) => setDisplayStart(e.target.value)} className="w-24 rounded border border-slate-300 bg-white px-2 py-1 font-mono text-xs outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
+                <input inputMode="numeric" placeholder="ДД.ММ.ГГГГ" maxLength={10} value={startInput} onChange={(e) => handleDateInput(e.target.value, "start")} className="w-24 rounded border border-slate-300 bg-white px-2 py-1 font-mono text-xs outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
                 <span className="text-slate-400">—</span>
-                <input inputMode="numeric" placeholder="ДД.ММ.ГГГГ" maxLength={10} value={displayDate(endDate)} onChange={(e) => setDisplayEnd(e.target.value)} className="w-24 rounded border border-slate-300 bg-white px-2 py-1 font-mono text-xs outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
+                <input inputMode="numeric" placeholder="ДД.ММ.ГГГГ" maxLength={10} value={endInput} onChange={(e) => handleDateInput(e.target.value, "end")} className="w-24 rounded border border-slate-300 bg-white px-2 py-1 font-mono text-xs outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
               </div>
               <button type="button" onClick={setPeriod} className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50 hover:text-[#042433]">Этот месяц</button>
             </div>
