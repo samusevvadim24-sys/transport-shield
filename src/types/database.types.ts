@@ -26,6 +26,17 @@ export interface DatabaseCustomer {
   unp: string | null; address: string | null; phone: string | null; email: string | null; contact_person: string | null;
   bank_name: string | null; bank_account: string | null; contract_number: string | null; contract_date: string | null;
   registration_number?: string | null; registration_date?: string | null; director_name?: string | null; bank_bic?: string | null;
+  balance: number;
+}
+export interface DatabaseCustomerBalanceTransaction {
+  id: number;
+  customer_id: number;
+  amount: number;
+  type: string;
+  description: string | null;
+  inspection_id: number | null;
+  balance_after: number | null;
+  created_at: string;
 }
 export interface DatabaseInspection {
   id: number; created_at: string; driver_id: number; requested_at: string; medical_status: string | null;
