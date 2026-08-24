@@ -1,0 +1,186 @@
+-- Billing for completed medical/mechanic inspections.
+-- One inspection costs 0.90 BYN for medical and 0.90 BYN for mechanic.
+-- "Ожидание" and "Явиться" do not create a charge.
+
+CREATE OR REPLACE FUNCTION public.charge_inspection_component(
+    p_inspection_id bigint,
+    p_component text,
+    p_amount numeric DEFAULT 0.90
+)
+RETURNS numeric
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_customer_id bigint;
+    v_balance numeric;
+    v_new_balance numeric;
+    v_type text;
+    v_description text;
+BEGIN
+    IF p_component NOT IN ('medical', 'mechanic') THEN
+        RAISE EXCEPTION 'Неизвестный компонент осмотра: %', p_component;
+    END IF;
+
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'Сумма списания должна быть больше 0';
+    END IF;
+
+    SELECT d.customer_id
+    INTO v_customer_id
+    FROM public.inspections i
+    JOIN public.drivers d ON d.id = i.driver_id
+    WHERE i.id = p_inspection_id;
+
+    IF v_customer_id IS NULL THEN
+        RAISE EXCEPTION 'Не удалось определить заказчика для осмотра %', p_inspection_id;
+    END IF;
+
+    IF p_component = 'medical' THEN
+        v_type := 'medical_charge';
+        v_description := 'Списание за мед. осмотр';
+    ELSE
+        v_type := 'mechanic_charge';
+        v_description := 'Списание за тех. осмотр';
+    END IF;
+
+    -- Защита от повторного списания одного компонента одного осмотра.
+    IF EXISTS (
+        SELECT 1
+        FROM public.customer_balance_transactions t
+        WHERE t.inspection_id = p_inspection_id
+          AND t.type = v_type
+    ) THEN
+        SELECT c.balance
+        INTO v_balance
+        FROM public.customers c
+        WHERE c.id = v_customer_id;
+
+        RETURN COALESCE(v_balance, 0);
+    END IF;
+
+    -- Блокируем баланс заказчика на время операции.
+    SELECT c.balance
+    INTO v_balance
+    FROM public.customers c
+    WHERE c.id = v_customer_id
+    FOR UPDATE;
+
+    IF v_balance IS NULL THEN
+        RAISE EXCEPTION 'Заказчик % не найден', v_customer_id;
+    END IF;
+
+    IF v_balance < p_amount THEN
+        RAISE EXCEPTION
+            'Недостаточно средств на балансе заказчика. Требуется %.2f BYN, доступно %.2f BYN',
+            p_amount,
+            v_balance;
+    END IF;
+
+    v_new_balance := v_balance - p_amount;
+
+    UPDATE public.customers
+    SET balance = v_new_balance
+    WHERE id = v_customer_id;
+
+    INSERT INTO public.customer_balance_transactions (
+        customer_id,
+        amount,
+        type,
+        description,
+        inspection_id,
+        balance_after
+    )
+    VALUES (
+        v_customer_id,
+        -p_amount,
+        v_type,
+        v_description,
+        p_inspection_id,
+        v_new_balance
+    );
+
+    RETURN v_new_balance;
+END;
+$$;
+
+-- Отдельная RPC, если списание понадобится вызвать из приложения вручную.
+CREATE OR REPLACE FUNCTION public.charge_customer_balance_component(
+    p_customer_id bigint,
+    p_inspection_id bigint,
+    p_component text,
+    p_amount numeric DEFAULT 0.90
+)
+RETURNS numeric
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_driver_customer_id bigint;
+BEGIN
+    SELECT d.customer_id
+    INTO v_driver_customer_id
+    FROM public.inspections i
+    JOIN public.drivers d ON d.id = i.driver_id
+    WHERE i.id = p_inspection_id;
+
+    IF v_driver_customer_id IS NULL THEN
+        RAISE EXCEPTION 'Осмотр % не найден', p_inspection_id;
+    END IF;
+
+    IF v_driver_customer_id <> p_customer_id THEN
+        RAISE EXCEPTION 'Осмотр % не принадлежит заказчику %', p_inspection_id, p_customer_id;
+    END IF;
+
+    RETURN public.charge_inspection_component(
+        p_inspection_id,
+        p_component,
+        p_amount
+    );
+END;
+$$;
+
+-- Списание происходит автоматически при завершении соответствующего этапа.
+CREATE OR REPLACE FUNCTION public.bill_inspection_components()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+    -- Медик: платим только за фактически завершённый результат.
+    IF NEW.medical_status IN ('Допущен', 'Не допущен')
+       AND COALESCE(OLD.medical_status, 'Ожидание') NOT IN ('Допущен', 'Не допущен') THEN
+        PERFORM public.charge_inspection_component(NEW.id, 'medical', 0.90);
+    END IF;
+
+    -- Механик: платим только за фактически завершённый результат.
+    IF NEW.mechanic_status IN ('Допущен', 'Не допущен')
+       AND COALESCE(OLD.mechanic_status, 'Ожидание') NOT IN ('Допущен', 'Не допущен') THEN
+        PERFORM public.charge_inspection_component(NEW.id, 'mechanic', 0.90);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_bill_inspection_components ON public.inspections;
+
+CREATE TRIGGER trg_bill_inspection_components
+AFTER UPDATE OF medical_status, mechanic_status ON public.inspections
+FOR EACH ROW
+EXECUTE FUNCTION public.bill_inspection_components();
+
+-- Нельзя списать один компонент одного осмотра дважды.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_balance_transactions_inspection_component
+ON public.customer_balance_transactions (inspection_id, type)
+WHERE type IN ('medical_charge', 'mechanic_charge');
+
+GRANT EXECUTE ON FUNCTION public.charge_customer_balance_component(
+    bigint,
+    bigint,
+    text,
+    numeric
+) TO authenticated;
