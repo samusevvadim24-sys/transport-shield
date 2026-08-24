@@ -29,7 +29,6 @@ export async function fetchCustomers({ currentPage, search = "" }: FetchCustomer
   return { customers: (data as DatabaseCustomer[]) || [], totalCount: count || 0 };
 }
 
-/** Проверяет, занят ли номер заказчика. При редактировании текущая запись исключается. */
 export async function checkCustomerNumber(number: string, excludeId?: number | null) {
   const normalized = String(number ?? "").trim();
   if (!normalized) return { exists: false, error: null };
@@ -125,4 +124,19 @@ export async function deleteCustomerRecord(id: number, userId?: number | null) {
   }
 
   return { error: null };
+}
+
+export async function topUpCustomerBalance(customerId: number, amount: number, description = "Пополнение баланса") {
+  const { data, error } = await supabase.rpc("top_up_customer_balance", {
+    p_customer_id: customerId,
+    p_amount: amount,
+    p_description: description.trim() || "Пополнение баланса",
+  });
+
+  if (error) {
+    console.error("Ошибка при пополнении баланса заказчика:", error);
+    return { balance: null, error };
+  }
+
+  return { balance: Number(data), error: null };
 }
