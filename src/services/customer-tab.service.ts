@@ -55,6 +55,9 @@ export const formatInspectionItem = (item: any): Inspection => {
     medicTime: medicalTimeFormatted,
     medicStatus: item.medical_status || "Ожидание",
     alcohol: item.breathalyzer_value ?? null,
+    bloodPressureSystolic: item.blood_pressure_systolic ?? null,
+    bloodPressureDiastolic: item.blood_pressure_diastolic ?? null,
+    drugIntoxication: Boolean(item.drug_intoxication),
     mechanic: "Механик",
     mechanicTime: mechanicTimeFormatted,
     mechanicStatus: item.mechanic_status || "Ожидание",
@@ -113,7 +116,7 @@ export async function fetchInspectionsData({
     if (!searchTerm) return query;
     const cleanSearch = searchTerm.trim();
     return query
-      .not('drivers', 'is', null) 
+      .not('drivers', 'is', null)
       .or(
         `name.ilike.%${cleanSearch}%,car_number.ilike.%${cleanSearch}%,driver_id.ilike.%${cleanSearch}%,license_number.ilike.%${cleanSearch}%`,
         { foreignTable: "drivers" }
@@ -133,7 +136,6 @@ export async function fetchInspectionsData({
     if (startIso) query = query.gte("requested_at", startIso);
     if (endIso) query = query.lt("requested_at", endIso);
   } else {
-    // Для вкладки "Все" строго разделяем: завершенные по completed_at ИЛИ ожидающие по requested_at со статусом "Ожидание"
     if (startIso && endIso) {
       query = query.or(
         `and(completed_at.gte."${startIso}",completed_at.lt."${endIso}"),and(overall_status.eq.Ожидание,requested_at.gte."${startIso}",requested_at.lt."${endIso}")`
@@ -165,9 +167,9 @@ export async function fetchInspectionsData({
     return { formatted: [], totalCount: 0 };
   }
 
-  return { 
-    formatted: (data || []).map(formatInspectionItem), 
-    totalCount: count ?? 0 
+  return {
+    formatted: (data || []).map(formatInspectionItem),
+    totalCount: count ?? 0
   };
 }
 
@@ -279,6 +281,26 @@ export async function fetchSingleInspection(recordId: string | number) {
   return formatInspectionItem(data);
 }
 
+export async function updateInspectionMedical(
+  docId: string,
+  now: string,
+  alcoholVal: number,
+  systolic: number | null,
+  diastolic: number | null,
+  drugIntoxication: boolean
+) {
+  const medStatus = alcoholVal === 0 && !drugIntoxication ? "Допущен" : "Не допущен";
+
+  return await supabase.from("inspections").update({
+    medical_status: medStatus,
+    medical_date: now,
+    breathalyzer_value: alcoholVal,
+    blood_pressure_systolic: systolic,
+    blood_pressure_diastolic: diastolic,
+    drug_intoxication: drugIntoxication,
+  }).eq("id", docId);
+}
+
 export async function updateInspectionApprove(docId: string, now: string) {
   return await supabase.from("inspections").update({
     overall_status: "Допущен",
@@ -288,22 +310,37 @@ export async function updateInspectionApprove(docId: string, now: string) {
     mechanic_date: now,
     completed_at: now,
     breathalyzer_value: 0.0,
+    blood_pressure_systolic: null,
+    blood_pressure_diastolic: null,
+    drug_intoxication: false,
     mechanic_issues: [],
   }).eq("id", docId);
 }
 
 export async function updateInspectionReject(
-  docId: string, now: string, alcoholVal: number, issuesList: string[],
-  medStatus: string, mechStatus: string, overallStatus: string
+  docId: string, now: string, _alcoholVal: number, issuesList: string[],
+  _medStatus: string, _mechStatus: string, _overallStatus: string
 ) {
+  const { data: current, error: readError } = await supabase
+    .from("inspections")
+    .select("medical_status")
+    .eq("id", docId)
+    .single();
+
+  if (readError || !current) {
+    return { data: null, error: readError ?? new Error("Не найдена запись осмотра") };
+  }
+
+  const mechStatus = issuesList.length === 0 ? "Допущен" : "Не допущен";
+  const overallStatus = current.medical_status === "Допущен" && mechStatus === "Допущен"
+    ? "Допущен"
+    : "Не допущен";
+
   return await supabase.from("inspections").update({
     overall_status: overallStatus,
-    medical_status: medStatus,
     mechanic_status: mechStatus,
-    medical_date: now,
     mechanic_date: now,
     completed_at: now,
-    breathalyzer_value: alcoholVal,
     mechanic_issues: issuesList,
   }).eq("id", docId);
 }
@@ -317,6 +354,9 @@ export async function updateInspectionReset(docId: string) {
     mechanic_date: null,
     completed_at: null,
     breathalyzer_value: null,
+    blood_pressure_systolic: null,
+    blood_pressure_diastolic: null,
+    drug_intoxication: false,
     mechanic_issues: [],
   }).eq("id", docId);
 }
