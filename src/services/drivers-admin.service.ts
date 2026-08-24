@@ -5,7 +5,6 @@ import type { Driver, DriverFormData, CustomerOption } from "@/types/database.ty
 
 export const DRIVERS_PAGE_SIZE = 10;
 interface FetchDriversParams { currentPage: number; search?: string; }
-
 function toError(error: unknown): Error { if (error instanceof Error) return error; if (typeof error === "object" && error && "message" in error) return new Error(String((error as { message: unknown }).message)); return new Error(String(error)); }
 function escapeForOrFilter(value: string): string { return value.replace(/[,.:()]/g, "\\$&"); }
 
@@ -39,11 +38,7 @@ export async function getNextDriverNumber(customerId: string | number): Promise<
     const { data: drivers, error } = await supabase.from("drivers").select("driver_id").eq("customer_id", Number(customerId));
     if (error) return { number: null, error };
     const used = new Set<number>();
-    for (const row of drivers ?? []) {
-      const value = String(row.driver_id ?? "");
-      const match = value.match(new RegExp(`^${customerNumber}\\.(\\d+)$`));
-      if (match) used.add(Number(match[1]));
-    }
+    for (const row of drivers ?? []) { const value = String(row.driver_id ?? ""); const match = value.match(new RegExp(`^${customerNumber}\\.(\\d+)$`)); if (match) used.add(Number(match[1])); }
     for (let i = 1; i <= 999; i++) if (!used.has(i)) return { number: `${customerNumber}.${i}`, error: null };
     return { number: null, error: new Error("Для этого заказчика заняты все номера от 1 до 999.") };
   } catch (err) { return { number: null, error: toError(err) }; }
@@ -53,23 +48,23 @@ export async function createDriver(formData: DriverFormData) {
   try {
     if (!String(formData.name ?? "").trim()) return { data: null, error: { message: "ФИО водителя обязательно." } };
     if (!String(formData.password ?? "").trim()) return { data: null, error: { message: "Пароль обязателен." } };
-
     const nextNumber = await getNextDriverNumber(formData.customer_id);
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
-
     const session = AuthService.getSession();
     if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
 
-    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", {
-      p_admin_id: Number(session.id),
-      p_login: nextNumber.number,
-      p_password: String(formData.password).trim(),
-    });
+    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", { p_admin_id: Number(session.id), p_login: nextNumber.number, p_password: String(formData.password).trim() });
     if (userError) return { data: null, error: userError };
     if (!userData) return { data: null, error: { message: "Не удалось создать пользователя водителя." } };
 
-    // Запись drivers тоже создаём через SECURITY DEFINER RPC, чтобы RLS
-    // public.drivers не требовал прямого INSERT из браузера.
+    const toDateValue = (value: unknown) => {
+      const text = String(value ?? "").trim();
+      if (!text) return "";
+      const match = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+      if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+      return text;
+    };
+
     const { data: driverData, error: driverError } = await supabase.rpc("create_driver_record", {
       p_admin_id: Number(session.id),
       p_user_id: Number(userData.id),
@@ -78,18 +73,13 @@ export async function createDriver(formData: DriverFormData) {
       p_car_number: String(formData.car_number ?? "").trim(),
       p_customer_id: Number(formData.customer_id),
       p_driver_id: nextNumber.number,
-      p_insurance_expiry: String(formData.insurance_expiry ?? ""),
-      p_license_expiry: String(formData.license_expiry ?? ""),
-      p_license_number: String(formData.license_number ?? ""),
-      p_medical_expiry: String(formData.medical_expiry ?? ""),
-      p_tech_inspection_expiry: String(formData.tech_inspection_expiry ?? ""),
+      p_insurance_expiry: toDateValue(formData.insurance_expiry),
+      p_license_expiry: toDateValue(formData.license_expiry),
+      p_license_number: String(formData.license_number ?? "").trim(),
+      p_medical_expiry: toDateValue(formData.medical_expiry),
+      p_tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry),
     });
-
-    if (driverError) {
-      console.error("Ошибка при создании записи водителя:", driverError);
-      return { data: null, error: driverError };
-    }
-
+    if (driverError) { console.error("Ошибка при создании записи водителя:", driverError); return { data: null, error: driverError }; }
     if (!driverData) return { data: null, error: { message: "Не удалось создать запись водителя." } };
     return { data: driverData, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
@@ -97,19 +87,13 @@ export async function createDriver(formData: DriverFormData) {
 
 export async function updateDriver(id: string | number, formData: DriverFormData, userId?: number | null) {
   try {
-    if (userId) {
-      const userUpdates: Record<string, any> = { login: formData.login }; if (formData.password?.trim()) userUpdates.password = formData.password;
-      const { error: userError } = await supabase.from("users").update(userUpdates).eq("id", userId); if (userError) return { data: null, error: userError };
-    }
+    if (userId) { const userUpdates: Record<string, any> = { login: formData.login }; if (formData.password?.trim()) userUpdates.password = formData.password; const { error: userError } = await supabase.from("users").update(userUpdates).eq("id", userId); if (userError) return { data: null, error: userError }; }
     const { data, error } = await supabase.from("drivers").update({ name: formData.name, car_brand: formData.car_brand, car_number: formData.car_number, customer_id: Number(formData.customer_id), driver_id: formData.driver_id || null, insurance_expiry: formData.insurance_expiry || null, license_expiry: formData.license_expiry || null, license_number: formData.license_number || null, medical_expiry: formData.medical_expiry || null, tech_inspection_expiry: formData.tech_inspection_expiry || null }).eq("id", id).select().maybeSingle();
     if (error) return { data: null, error }; return { data, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
 
 export async function deleteDriverRecord(id: string | number, userId?: number | null) {
-  try {
-    const { error: driverError } = await supabase.from("drivers").delete().eq("id", id); if (driverError) return { error: driverError };
-    if (userId) { const { error: userError } = await supabase.from("users").delete().eq("id", userId); if (userError) console.error("Ошибка при удалении связанного пользователя водителя:", userError); }
-    return { error: null };
-  } catch (err) { return { error: { message: toError(err).message } }; }
+  try { const { error: driverError } = await supabase.from("drivers").delete().eq("id", id); if (driverError) return { error: driverError }; if (userId) { const { error: userError } = await supabase.from("users").delete().eq("id", userId); if (userError) console.error("Ошибка при удалении связанного пользователя водителя:", userError); } return { error: null }; }
+  catch (err) { return { error: { message: toError(err).message } }; }
 }
