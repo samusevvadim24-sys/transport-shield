@@ -25,9 +25,17 @@ export default function AdminDashboardPage(): JSX.Element {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const rawUser = localStorage.getItem("ts_user_session") || localStorage.getItem("currentUser");
-    if (!rawUser) { router.push("/"); return; }
-    setLoading(false);
+    try {
+      const rawUser = localStorage.getItem("ts_user_session") || localStorage.getItem("currentUser");
+      if (!rawUser) { router.replace("/"); return; }
+      const session = JSON.parse(rawUser) as { role?: string };
+      if (session.role !== "admin") { router.replace("/"); return; }
+      setLoading(false);
+    } catch {
+      localStorage.removeItem("ts_user_session");
+      localStorage.removeItem("currentUser");
+      router.replace("/");
+    }
   }, [router]);
 
   useEffect(() => {
@@ -60,7 +68,6 @@ export default function AdminDashboardPage(): JSX.Element {
   }, [activeTab, selectedCustomerId]);
 
   const handleLogout = () => { localStorage.removeItem("currentUser"); localStorage.removeItem("ts_user_session"); router.push("/"); };
-  const handleCustomerClick = (customerName: string) => { if (!customerName) return; setSelectedCustomerId(customerName); setActiveTab("drivers"); };
 
   if (loading) return <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500"><div className="text-center"><div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-[#042433]" /><p className="text-sm">Проверка доступа...</p></div></div>;
 
@@ -79,7 +86,7 @@ export default function AdminDashboardPage(): JSX.Element {
         <div className="border-t border-slate-100 p-2 shrink-0"><button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"><div className="flex w-5 justify-center"><LogOut size={18} /></div><span className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "w-auto opacity-100 delay-150" : "w-0 opacity-0 overflow-hidden"}`}>Выйти</span></button></div>
       </aside>
       <header className="flex md:hidden h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0"><span className="text-sm font-bold">Транспортный Щит</span><button onClick={handleLogout} className="text-slate-600"><LogOut size={18} /></button></header>
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6"><div className="mx-auto max-w-7xl">{activeTab === "checks" && <ChecksTab onCustomerClick={handleCustomerClick} />}{activeTab === "drivers" && <DriversTab />}{activeTab === "customers" && <CustomersTab />}</div></main>
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6"><div className="mx-auto max-w-7xl">{activeTab === "checks" && <ChecksTab />}{activeTab === "drivers" && <DriversTab />}{activeTab === "customers" && <CustomersTab />}</div></main>
       <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 px-2 justify-around items-center z-50 shadow-lg"><button onClick={() => setActiveTab("checks")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "checks" ? "text-[#042433]" : "text-slate-400"}`}><ClipboardCheck size={20} className="mb-1" /> Осмотры</button><button onClick={() => { setSelectedCustomerId(""); setActiveTab("drivers"); }} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "drivers" ? "text-[#042433]" : "text-slate-400"}`}><Users size={20} className="mb-1" /> Водители</button><button onClick={() => setActiveTab("customers")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "customers" ? "text-[#042433]" : "text-slate-400"}`}><Building2 size={20} className="mb-1" /> Заказчики</button></nav>
     </div>
   );
