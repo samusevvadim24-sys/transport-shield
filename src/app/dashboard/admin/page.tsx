@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import ChecksTab from "./components/ChecksTab";
 import CustomersTab from "./components/CustomersTab";
-import DriversTab from "./components/DriversTab"; // 1. Импортируем готовый компонент водителей[cite: 4]
+import DriversTab from "./components/DriversTab";
 
 type TabType = "checks" | "drivers" | "customers";
 
@@ -42,8 +42,8 @@ const NavButton = ({
     <div className="flex w-5 shrink-0 justify-center">{icon}</div>
     <span
       className={`whitespace-nowrap transition-all duration-300 ease-in-out ${
-        isSidebarOpen 
-          ? "w-[120px] opacity-100 delay-150" 
+        isSidebarOpen
+          ? "w-[120px] opacity-100 delay-150"
           : "w-0 opacity-0 overflow-hidden"
       }`}
     >
@@ -77,6 +77,31 @@ export default function AdminDashboardPage(): JSX.Element {
     document.title = `${titles[activeTab]} — Транспортный щит`;
   }, [activeTab]);
 
+  // Когда переходим из журнала осмотров к заказчикам,
+  // передаём выбранное имя в существующее поле поиска CustomersTab.
+  // Это позволяет использовать текущую логику поиска без её дублирования.
+  useEffect(() => {
+    if (activeTab !== "customers" || !selectedCustomerId) return;
+
+    const timer = window.setTimeout(() => {
+      const input = document.querySelector(
+        'input[placeholder="Поиск по номеру, названию, УНП..."]'
+      ) as HTMLInputElement | null;
+
+      if (!input) return;
+
+      const valueSetter = Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value"
+      )?.set;
+
+      valueSetter?.call(input, selectedCustomerId);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [activeTab, selectedCustomerId]);
+
   const handleLogout = () => {
     localStorage.removeItem("currentUser");
     localStorage.removeItem("ts_user_session");
@@ -86,7 +111,7 @@ export default function AdminDashboardPage(): JSX.Element {
   const handleCustomerClick = (customerName: string) => {
     if (!customerName) return;
     setSelectedCustomerId(customerName);
-    setActiveTab("drivers");
+    setActiveTab("customers");
   };
 
   if (loading) {
@@ -102,8 +127,6 @@ export default function AdminDashboardPage(): JSX.Element {
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-slate-50 text-slate-900 overflow-hidden">
-      
-      {/* 1. ДЕСКТОПНЫЙ САЙДБАР */}
       <aside
         className={`hidden md:flex ${
           isSidebarOpen ? "w-64" : "w-16"
@@ -114,7 +137,7 @@ export default function AdminDashboardPage(): JSX.Element {
             <img src="/logo.png" alt="Logo" className="h-8 w-8 rounded-lg object-contain shrink-0" />
             <span className="text-sm font-bold whitespace-nowrap">Транспортный Щит</span>
           </div>
-          <button 
+          <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
           >
@@ -136,22 +159,19 @@ export default function AdminDashboardPage(): JSX.Element {
         </div>
       </aside>
 
-      {/* 2. МОБИЛЬНАЯ ШАПКА */}
       <header className="flex md:hidden h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0">
         <span className="text-sm font-bold">Транспортный Щит</span>
         <button onClick={handleLogout} className="text-slate-600"><LogOut size={18} /></button>
       </header>
 
-      {/* ОСНОВНОЙ КОНТЕНТ */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
         <div className="mx-auto max-w-7xl">
           {activeTab === "checks" && <ChecksTab onCustomerClick={handleCustomerClick} />}
-          {activeTab === "drivers" && <DriversTab />} {/* 2. Выводим полноценный компонент */}
+          {activeTab === "drivers" && <DriversTab />}
           {activeTab === "customers" && <CustomersTab />}
         </div>
       </main>
 
-      {/* 3. МОБИЛЬНАЯ ПАНЕЛЬ НАВИГАЦИИ */}
       <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 px-2 justify-around items-center z-50 shadow-lg">
         <button onClick={() => setActiveTab("checks")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "checks" ? "text-[#042433]" : "text-slate-400"}`}>
           <ClipboardCheck size={20} className="mb-1" /> Осмотры
