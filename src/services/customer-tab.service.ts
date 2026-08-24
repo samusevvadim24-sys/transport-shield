@@ -10,10 +10,20 @@ const NORMAL_BLOOD_PRESSURE_VALUES = [
   [116, 76], [119, 79], [122, 80], [125, 80], [117, 77],
 ] as const;
 
+const MIN_SYSTOLIC = 90;
+const MAX_SYSTOLIC = 140;
+const MIN_DIASTOLIC = 60;
+const MAX_DIASTOLIC = 90;
+
 function getRandomNormalBloodPressure(): readonly [number, number] {
   return NORMAL_BLOOD_PRESSURE_VALUES[
     Math.floor(Math.random() * NORMAL_BLOOD_PRESSURE_VALUES.length)
   ];
+}
+
+function isBloodPressureWithinNormalRange(systolic: number | null, diastolic: number | null): boolean {
+  if (systolic == null || diastolic == null) return false;
+  return systolic >= MIN_SYSTOLIC && systolic <= MAX_SYSTOLIC && diastolic >= MIN_DIASTOLIC && diastolic <= MAX_DIASTOLIC;
 }
 
 export const formatInspectionItem = (item: any): Inspection => {
@@ -79,19 +89,26 @@ export async function fetchStatusCounts({ startDateFilter, endDateFilter, search
 export async function fetchSingleInspection(recordId: string | number) { const { data, error } = await supabase.from("inspections").select(`*, drivers!inspections_driver_id_fkey (id, driver_id, name, license_number, license_expiry, medical_expiry, tech_inspection_expiry, car_brand, car_number, customers ( name ))`).eq("id", recordId).single(); if (error || !data) return null; return formatInspectionItem(data); }
 
 export async function updateInspectionMedical(docId: string, now: string, alcoholVal: number, systolic: number | null, diastolic: number | null, drugIntoxication: boolean) {
-  const medStatus = alcoholVal === 0 && !drugIntoxication ? "Допущен" : "Не допущен";
+  const pressureOk = isBloodPressureWithinNormalRange(systolic, diastolic);
+  const medStatus = alcoholVal === 0 && !drugIntoxication && pressureOk ? "Допущен" : "Не допущен";
   return await supabase.from("inspections").update({ medical_status: medStatus, medical_date: now, breathalyzer_value: alcoholVal, blood_pressure_systolic: systolic, blood_pressure_diastolic: diastolic, drug_intoxication: drugIntoxication }).eq("id", docId);
 }
 
 export async function updateInspectionApprove(docId: string, now: string) {
-  const { data: current, error: readError } = await supabase.from("inspections").select("blood_pressure_systolic,blood_pressure_diastolic").eq("id", docId).single();
+  const { data: current, error: readError } = await supabase.from("inspections").select("blood_pressure_systolic,blood_pressure_diastolic,breathalyzer_value,drug_intoxication").eq("id", docId).single();
   if (readError || !current) return { data: null, error: readError ?? new Error("Не найдена запись осмотра") };
 
   let systolic = current.blood_pressure_systolic;
   let diastolic = current.blood_pressure_diastolic;
   if (systolic == null || diastolic == null) [systolic, diastolic] = getRandomNormalBloodPressure();
 
-  return await supabase.from("inspections").update({ overall_status: "Допущен", medical_status: "Допущен", mechanic_status: "Допущен", medical_date: now, mechanic_date: now, completed_at: now, breathalyzer_value: 0.0, blood_pressure_systolic: systolic, blood_pressure_diastolic: diastolic, drug_intoxication: false, mechanic_issues: [] }).eq("id", docId);
+  const pressureOk = isBloodPressureWithinNormalRange(systolic, diastolic);
+  const alcoholOk = (current.breathalyzer_value ?? 0) === 0;
+  const drugsOk = current.drug_intoxication !== true;
+  const medicalOk = pressureOk && alcoholOk && drugsOk;
+  const overallStatus = medicalOk ? "Допущен" : "Не допущен";
+
+  return await supabase.from("inspections").update({ overall_status: overallStatus, medical_status: medicalOk ? "Допущен" : "Не допущен", mechanic_status: medicalOk ? "Допущен" : "Не допущен", medical_date: now, mechanic_date: now, completed_at: now, breathalyzer_value: current.breathalyzer_value ?? 0.0, blood_pressure_systolic: systolic, blood_pressure_diastolic: diastolic, drug_intoxication: current.drug_intoxication === true, mechanic_issues: medicalOk ? [] : ["Медицинские показатели не соответствуют норме"] }).eq("id", docId);
 }
 
 export async function updateInspectionReject(docId: string, now: string, _alcoholVal: number, issuesList: string[], _medStatus: string, _mechStatus: string, _overallStatus: string) {
