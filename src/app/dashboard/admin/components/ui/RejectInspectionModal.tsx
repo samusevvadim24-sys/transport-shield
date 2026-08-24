@@ -15,16 +15,16 @@ interface RejectInspectionModalProps {
   onExecute: () => void;
 }
 
-export default function RejectInspectionModal({ isOpen, inspection, rawAlcoholDigits, rejectReasons, onClose, onAlcoholKeyDown, getFormattedAlcoholNumber, setRejectReasons, onExecute }: RejectInspectionModalProps) {
-  const [systolic, setSystolic] = useState("");
-  const [diastolic, setDiastolic] = useState("");
+export default function RejectInspectionModal({ isOpen, inspection, rejectReasons, onClose, onAlcoholKeyDown, getFormattedAlcoholNumber, setRejectReasons, onExecute }: RejectInspectionModalProps) {
+  const [systolic, setSystolic] = useState("120");
+  const [diastolic, setDiastolic] = useState("80");
   const [drugIntoxication, setDrugIntoxication] = useState(false);
   const [savingMedical, setSavingMedical] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
-    setSystolic(inspection?.bloodPressureSystolic?.toString() ?? "");
-    setDiastolic(inspection?.bloodPressureDiastolic?.toString() ?? "");
+    setSystolic(inspection?.bloodPressureSystolic?.toString() ?? "120");
+    setDiastolic(inspection?.bloodPressureDiastolic?.toString() ?? "80");
     setDrugIntoxication(inspection?.drugIntoxication ?? false);
   }, [isOpen, inspection]);
 
@@ -33,13 +33,14 @@ export default function RejectInspectionModal({ isOpen, inspection, rawAlcoholDi
   const systolicNumber = systolic.trim() ? Number(systolic) : null;
   const diastolicNumber = diastolic.trim() ? Number(diastolic) : null;
   const hasPressure = systolicNumber !== null && diastolicNumber !== null && Number.isFinite(systolicNumber) && Number.isFinite(diastolicNumber);
-  const pressureOutOfRange = hasPressure && (systolicNumber < 90 || systolicNumber > 140 || diastolicNumber < 60 || diastolicNumber > 90);
+  const pressureOutOfRange = !hasPressure || systolicNumber < 90 || systolicNumber > 140 || diastolicNumber < 60 || diastolicNumber > 90;
   const medicalNotAdmitted = pressureOutOfRange || drugIntoxication || getFormattedAlcoholNumber() !== 0;
 
   const handleExecute = async () => {
-    if (systolicNumber !== null && (!Number.isInteger(systolicNumber) || systolicNumber < 50 || systolicNumber > 300)) { alert("Укажите верхнее давление от 50 до 300 мм рт. ст."); return; }
-    if (diastolicNumber !== null && (!Number.isInteger(diastolicNumber) || diastolicNumber < 30 || diastolicNumber > 200)) { alert("Укажите нижнее давление от 30 до 200 мм рт. ст."); return; }
-    if (systolicNumber !== null && diastolicNumber !== null && systolicNumber <= diastolicNumber) { alert("Верхнее давление должно быть выше нижнего."); return; }
+    if (!hasPressure) { alert("Укажите оба показания давления."); return; }
+    if (!Number.isInteger(systolicNumber) || systolicNumber < 50 || systolicNumber > 300) { alert("Укажите верхнее давление от 50 до 300 мм рт. ст."); return; }
+    if (!Number.isInteger(diastolicNumber) || diastolicNumber < 30 || diastolicNumber > 200) { alert("Укажите нижнее давление от 30 до 200 мм рт. ст."); return; }
+    if (systolicNumber <= diastolicNumber) { alert("Верхнее давление должно быть выше нижнего."); return; }
     setSavingMedical(true);
     try {
       const now = new Date().toISOString();
@@ -73,7 +74,7 @@ export default function RejectInspectionModal({ isOpen, inspection, rawAlcoholDi
               <p className="mt-1 text-[11px]">{medicalNotAdmitted ? <span className="font-medium text-rose-600">Статус медика: Не допущен</span> : <span className="font-medium text-emerald-600">Статус медика: Допущен</span>}</p>
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5"><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-800"><Wrench size={15} /><span>Технический осмотр (Замечания)</span></div><div className="grid grid-cols-1 gap-2 text-xs text-slate-700"><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.firstAidKit} onChange={(e) => setRejectReasons({ ...rejectReasons, firstAidKit: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Отсутствие аптечки</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.extinguisher} onChange={(e) => setRejectReasons({ ...rejectReasons, extinguisher: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Отсутствие огнетушителя</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.baldTires} onChange={(e) => setRejectReasons({ ...rejectReasons, baldTires: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Лысая резина</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.bodyDamage} onChange={(e) => setRejectReasons({ ...rejectReasons, bodyDamage: e.target.checked })} className="rounded bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors" /><span>Повреждение кузова или салона</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.lightsFault} onChange={(e) => setRejectReasons({ ...rejectReasons, lightsFault: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Неисправность световых приборов</span></label></div></div>
+          <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5"><div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-800"><Wrench size={15} /><span>Технический осмотр (Замечания)</span></div><div className="grid grid-cols-1 gap-2 text-xs text-slate-700"><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.firstAidKit} onChange={(e) => setRejectReasons({ ...rejectReasons, firstAidKit: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Отсутствие аптечки</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.extinguisher} onChange={(e) => setRejectReasons({ ...rejectReasons, extinguisher: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Отсутствие огнетушителя</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.baldTires} onChange={(e) => setRejectReasons({ ...rejectReasons, baldTires: e.target.checked })} className="rounded bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors" /><span>Лысая резина</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.bodyDamage} onChange={(e) => setRejectReasons({ ...rejectReasons, bodyDamage: e.target.checked })} className="rounded bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors" /><span>Повреждение кузова или салона</span></label><label className="flex cursor-pointer items-center gap-2.5 rounded-lg bg-white p-2 border border-slate-200 hover:bg-slate-50 transition-colors"><input type="checkbox" checked={rejectReasons.lightsFault} onChange={(e) => setRejectReasons({ ...rejectReasons, lightsFault: e.target.checked })} className="rounded border-slate-300 text-[#042433] focus:ring-[#042433]" /><span>Неисправность световых приборов</span></label></div></div>
         </div>
         <div className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4"><button type="button" onClick={onClose} disabled={savingMedical} className="cursor-pointer rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50">Отмена</button><button type="button" onClick={handleExecute} disabled={savingMedical} className="cursor-pointer rounded-lg bg-[#042433] px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#031822] disabled:cursor-not-allowed disabled:opacity-60">{savingMedical ? "Сохранение..." : "Сохранить результаты осмотра"}</button></div>
       </div>
