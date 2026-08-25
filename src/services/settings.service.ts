@@ -33,15 +33,11 @@ const EMPTY: SystemSettings = {
 export async function fetchSystemSettings(): Promise<SystemSettings> {
   const { data, error } = await supabase
     .from("system_settings")
-    .select(
-      "id, medic_last_name, mechanic_last_name, medical_inspection_price, mechanic_inspection_price, organization_name, organization_address, organization_bank_account, organization_unp, organization_phone, organization_email, director_name"
-    )
+    .select("id, medic_last_name, mechanic_last_name, medical_inspection_price, mechanic_inspection_price, organization_name, organization_address, organization_bank_account, organization_unp, organization_phone, organization_email, director_name")
     .eq("id", 1)
     .maybeSingle();
-
   if (error) throw error;
   if (!data) return EMPTY;
-
   return {
     id: Number(data.id),
     medic_surname: data.medic_last_name ?? "",
@@ -76,21 +72,13 @@ export async function updateSystemSettings(values: Omit<SystemSettings, "id">) {
   });
 }
 
-export async function updateAdminPassword(
-  userId: number,
-  currentPassword: string,
-  newPassword: string,
-) {
+export async function updateAdminPassword(userId: number, currentPassword: string, newPassword: string) {
   const current = currentPassword.trim();
   const next = newPassword.trim();
-
-  if (next.length < 6) {
-    return { error: new Error("Новый пароль должен содержать минимум 6 символов") };
-  }
-
-  if (!current) {
-    return { error: new Error("Введите текущий пароль") };
-  }
+  if (!current) return { error: new Error("Введите текущий пароль") };
+  if (!next) return { error: new Error("Введите новый пароль") };
+  if (next.length < 6) return { error: new Error("Новый пароль должен содержать минимум 6 символов") };
+  if (current === next) return { error: new Error("Новый пароль должен отличаться от текущего") };
 
   const { data: user, error: readError } = await supabase
     .from("users")
@@ -103,11 +91,17 @@ export async function updateAdminPassword(
   if (!user) return { error: new Error("Администратор не найден") };
   if (user.password !== current) return { error: new Error("Текущий пароль указан неверно") };
 
-  const { error } = await supabase
+  const { data: updatedUser, error: updateError } = await supabase
     .from("users")
     .update({ password: next })
     .eq("id", userId)
-    .eq("role", "admin");
+    .eq("role", "admin")
+    .select("id")
+    .maybeSingle();
 
-  return { error };
+  if (updateError) return { error: updateError };
+  if (!updatedUser) {
+    return { error: new Error("Пароль не изменён: база данных не вернула обновлённую запись. Проверьте RLS для public.users.") };
+  }
+  return { error: null };
 }
