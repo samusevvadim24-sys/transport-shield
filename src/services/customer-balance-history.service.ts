@@ -21,12 +21,15 @@ export async function findCustomerForHistory(name: string, number?: string | nul
 }
 
 export async function fetchCustomerInspectionCharges(customerId: number) {
+  // История должна показывать фактические списания за осмотры.
+  // Не привязываемся только к type='inspection': так история продолжит
+  // работать и для уже существующих операций, если type был записан иначе.
   const { data: transactions, error: transactionError } = await supabase
     .from("customer_balance_transactions")
     .select("*")
     .eq("customer_id", customerId)
-    .eq("type", "inspection")
     .not("inspection_id", "is", null)
+    .lt("amount", 0)
     .order("created_at", { ascending: false });
 
   if (transactionError) {
