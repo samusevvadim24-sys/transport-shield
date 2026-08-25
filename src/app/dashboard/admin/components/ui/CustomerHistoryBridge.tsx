@@ -46,7 +46,12 @@ export default function CustomerHistoryBridge() {
     const applyCustomerCursor = () => {
       document.querySelectorAll("tbody tr td:first-child, article").forEach((source) => {
         const nameElement = source.querySelector("div.font-semibold.text-slate-900, h3");
-        if (nameElement) nameElement.classList.add("cursor-pointer", "hover:underline");
+        if (!nameElement) return;
+
+        // Используем inline-style, чтобы курсор гарантированно применялся,
+        // независимо от порядка/генерации Tailwind-классов.
+        nameElement.classList.add("cursor-pointer", "hover:underline");
+        (nameElement as HTMLElement).style.cursor = "pointer";
       });
     };
 
