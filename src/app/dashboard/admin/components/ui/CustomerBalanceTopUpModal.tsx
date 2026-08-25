@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { X, Wallet } from "lucide-react";
 import { DatabaseCustomer } from "../../../../../types/database.types";
 import { topUpCustomerBalance } from "../../../../../services/customers-admin.service";
+import { findCustomerForHistory } from "../../../../../services/customer-balance-history.service";
+import CustomerBalanceHistoryModal from "./CustomerBalanceHistoryModal";
 
 interface CustomerBalanceTopUpModalProps {
   isOpen: boolean;
@@ -17,6 +19,7 @@ export default function CustomerBalanceTopUpModal({ isOpen, customer, onClose, o
   const [description, setDescription] = useState("Пополнение баланса");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [historyCustomer, setHistoryCustomer] = useState<DatabaseCustomer | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -27,7 +30,38 @@ export default function CustomerBalanceTopUpModal({ isOpen, customer, onClose, o
     }
   }, [isOpen]);
 
-  if (!isOpen || !customer) return null;
+  useEffect(() => {
+    const handleCustomerClick = async (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      if (event.target.closest("button, a, input, textarea, select")) return;
+
+      const desktopCell = event.target.closest("tbody tr td:first-child");
+      const mobileCard = event.target.closest("article");
+      const source = desktopCell || mobileCard;
+      if (!source) return;
+
+      let name = "";
+      let number: string | null = null;
+
+      if (desktopCell) {
+        const nameContainer = desktopCell.querySelector("div.font-semibold.text-slate-900");
+        const spans = nameContainer ? Array.from(nameContainer.querySelectorAll("span")) : [];
+        name = spans.length ? spans[spans.length - 1]?.textContent?.trim() || "" : "";
+        number = (desktopCell.querySelector("span.font-mono")?.textContent?.trim() || "").replace(/^№/, "") || null;
+      } else if (mobileCard) {
+        name = mobileCard.querySelector("h3")?.textContent?.trim() || "";
+        number = (Array.from(mobileCard.querySelectorAll("span")).find((span) => /^№/.test(span.textContent?.trim() || ""))?.textContent?.trim() || "").replace(/^№/, "") || null;
+      }
+
+      if (!name) return;
+      const result = await findCustomerForHistory(name, number);
+      if (result.error || !result.customer) return;
+      setHistoryCustomer(result.customer);
+    };
+
+    document.addEventListener("click", handleCustomerClick);
+    return () => document.removeEventListener("click", handleCustomerClick);
+  }, []);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -37,6 +71,8 @@ export default function CustomerBalanceTopUpModal({ isOpen, customer, onClose, o
       setError("Введите корректную сумму больше 0 BYN.");
       return;
     }
+
+    if (!customer) return;
 
     setLoading(true);
     setError(null);
@@ -53,46 +89,56 @@ export default function CustomerBalanceTopUpModal({ isOpen, customer, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) onClose(); }}>
-      <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
-          <div>
-            <div className="flex items-center gap-2 text-base font-bold text-slate-900"><Wallet size={18} className="text-emerald-600" />Пополнение баланса</div>
-            <p className="mt-1 text-xs text-slate-500">{customer.name}{customer.number ? ` · №${customer.number}` : ""}</p>
-          </div>
-          <button type="button" disabled={loading} onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40"><X size={18} /></button>
-        </div>
+    <>
+      <CustomerBalanceHistoryModal
+        isOpen={!!historyCustomer}
+        customer={historyCustomer}
+        onClose={() => setHistoryCustomer(null)}
+      />
 
-        <form onSubmit={submit} className="space-y-4 p-5">
-          <div className="rounded-xl bg-slate-50 p-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Текущий баланс</div>
-            <div className="mt-1 text-xl font-bold text-slate-900">{Number(customer.balance || 0).toFixed(2)} BYN</div>
-          </div>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700">Сумма пополнения, BYN</span>
-            <input autoFocus inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Например, 50.00" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
-          </label>
-
-          <label className="block">
-            <span className="mb-1.5 block text-xs font-semibold text-slate-700">Комментарий</span>
-            <input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
-          </label>
-
-          {amount && Number.isFinite(Number(amount.replace(",", "."))) && Number(amount.replace(",", ".")) > 0 && (
-            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800">
-              После пополнения: <strong>{(Number(customer.balance || 0) + Number(amount.replace(",", "."))).toFixed(2)} BYN</strong>
+      {isOpen && customer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-[2px]" onMouseDown={(event) => { if (event.target === event.currentTarget && !loading) onClose(); }}>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <div className="flex items-center gap-2 text-base font-bold text-slate-900"><Wallet size={18} className="text-emerald-600" />Пополнение баланса</div>
+                <p className="mt-1 text-xs text-slate-500">{customer.name}{customer.number ? ` · №${customer.number}` : ""}</p>
+              </div>
+              <button type="button" disabled={loading} onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40"><X size={18} /></button>
             </div>
-          )}
 
-          {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">{error}</div>}
+            <form onSubmit={submit} className="space-y-4 p-5">
+              <div className="rounded-xl bg-slate-50 p-3">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Текущий баланс</div>
+                <div className="mt-1 text-xl font-bold text-slate-900">{Number(customer.balance || 0).toFixed(2)} BYN</div>
+              </div>
 
-          <div className="flex gap-2 pt-1">
-            <button type="button" disabled={loading} onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Отмена</button>
-            <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-[#042433] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#073850] disabled:cursor-not-allowed disabled:opacity-50">{loading ? "Пополнение..." : "Пополнить"}</button>
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-700">Сумма пополнения, BYN</span>
+                <input autoFocus inputMode="decimal" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Например, 50.00" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold text-slate-700">Комментарий</span>
+                <input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={200} className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#042433] focus:ring-1 focus:ring-[#042433]" />
+              </label>
+
+              {amount && Number.isFinite(Number(amount.replace(",", "."))) && Number(amount.replace(",", ".")) > 0 && (
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  После пополнения: <strong>{(Number(customer.balance || 0) + Number(amount.replace(",", "."))).toFixed(2)} BYN</strong>
+                </div>
+              )}
+
+              {error && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">{error}</div>}
+
+              <div className="flex gap-2 pt-1">
+                <button type="button" disabled={loading} onClick={onClose} className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Отмена</button>
+                <button type="submit" disabled={loading} className="flex-1 rounded-xl bg-[#042433] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#073850] disabled:cursor-not-allowed disabled:opacity-50">{loading ? "Пополнение..." : "Пополнить"}</button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }
