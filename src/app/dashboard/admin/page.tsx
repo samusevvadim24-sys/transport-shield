@@ -3,12 +3,13 @@
 
 import { useState, useEffect, JSX } from "react";
 import { useRouter } from "next/navigation";
-import { ClipboardCheck, Users, Building2, LogOut, Menu, ChevronLeft } from "lucide-react";
+import { ClipboardCheck, Users, Building2, LogOut, Menu, ChevronLeft, Settings } from "lucide-react";
 import ChecksTab from "./components/ChecksTab";
 import CustomersTab from "./components/CustomersTab";
 import DriversTab from "./components/DriversTab";
+import SettingsTab from "./components/SettingsTab";
 
-type TabType = "checks" | "drivers" | "customers";
+type TabType = "checks" | "drivers" | "customers" | "settings";
 
 const NavButton = ({ onClick, isActive, isSidebarOpen, icon, label }: { onClick: () => void; isActive: boolean; isSidebarOpen: boolean; icon: JSX.Element; label: string; }) => (
   <button onClick={onClick} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-300 ease-in-out ${isActive ? "bg-[#042433] text-white shadow-sm" : "text-slate-600 hover:bg-slate-100"}`} title={!isSidebarOpen ? label : ""}>
@@ -39,7 +40,7 @@ export default function AdminDashboardPage(): JSX.Element {
   }, [router]);
 
   useEffect(() => {
-    const titles: Record<TabType, string> = { checks: "Журнал осмотров", drivers: "Водители", customers: "Заказчики" };
+    const titles: Record<TabType, string> = { checks: "Журнал осмотров", drivers: "Водители", customers: "Заказчики", settings: "Настройки" };
     document.title = `${titles[activeTab]} — Транспортный щит`;
   }, [activeTab]);
 
@@ -82,12 +83,13 @@ export default function AdminDashboardPage(): JSX.Element {
           <NavButton isSidebarOpen={isSidebarOpen} isActive={activeTab === "checks"} onClick={() => setActiveTab("checks")} icon={<ClipboardCheck size={18} />} label="Журнал осмотров" />
           <NavButton isSidebarOpen={isSidebarOpen} isActive={activeTab === "drivers"} onClick={() => { setSelectedCustomerId(""); setActiveTab("drivers"); }} icon={<Users size={18} />} label="Водители" />
           <NavButton isSidebarOpen={isSidebarOpen} isActive={activeTab === "customers"} onClick={() => setActiveTab("customers")} icon={<Building2 size={18} />} label="Заказчики" />
+          <NavButton isSidebarOpen={isSidebarOpen} isActive={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<Settings size={18} />} label="Настройки" />
         </nav>
         <div className="border-t border-slate-100 p-2 shrink-0"><button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 transition-all"><div className="flex w-5 justify-center"><LogOut size={18} /></div><span className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "w-auto opacity-100 delay-150" : "w-0 opacity-0 overflow-hidden"}`}>Выйти</span></button></div>
       </aside>
       <header className="flex md:hidden h-14 items-center justify-between border-b border-slate-200 bg-white px-4 shrink-0"><span className="text-sm font-bold">Транспортный Щит</span><button onClick={handleLogout} className="text-slate-600"><LogOut size={18} /></button></header>
-      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6"><div className="mx-auto max-w-7xl">{activeTab === "checks" && <ChecksTab />}{activeTab === "drivers" && <DriversTab />}{activeTab === "customers" && <CustomersTab />}</div></main>
-      <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 px-2 justify-around items-center z-50 shadow-lg"><button onClick={() => setActiveTab("checks")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "checks" ? "text-[#042433]" : "text-slate-400"}`}><ClipboardCheck size={20} className="mb-1" /> Осмотры</button><button onClick={() => { setSelectedCustomerId(""); setActiveTab("drivers"); }} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "drivers" ? "text-[#042433]" : "text-slate-400"}`}><Users size={20} className="mb-1" /> Водители</button><button onClick={() => setActiveTab("customers")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "customers" ? "text-[#042433]" : "text-slate-400"}`}><Building2 size={20} className="mb-1" /> Заказчики</button></nav>
+      <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6"><div className="mx-auto max-w-7xl">{activeTab === "checks" && <ChecksTab />}{activeTab === "drivers" && <DriversTab />}{activeTab === "customers" && <CustomersTab />}{activeTab === "settings" && <SettingsTab />}</div></main>
+      <nav className="flex md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-200 px-2 justify-around items-center z-50 shadow-lg"><button onClick={() => setActiveTab("checks")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "checks" ? "text-[#042433]" : "text-slate-400"}`}><ClipboardCheck size={20} className="mb-1" /> Осмотры</button><button onClick={() => { setSelectedCustomerId(""); setActiveTab("drivers"); }} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "drivers" ? "text-[#042433]" : "text-slate-400"}`}><Users size={20} className="mb-1" /> Водители</button><button onClick={() => setActiveTab("customers")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "customers" ? "text-[#042433]" : "text-slate-400"}`}><Building2 size={20} className="mb-1" /> Заказчики</button><button onClick={() => setActiveTab("settings")} className={`flex flex-col items-center flex-1 py-1 text-xs font-medium ${activeTab === "settings" ? "text-[#042433]" : "text-slate-400"}`}><Settings size={20} className="mb-1" /> Настройки</button></nav>
     </div>
   );
 }
