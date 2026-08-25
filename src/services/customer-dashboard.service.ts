@@ -24,12 +24,24 @@ export interface CustomerInspection {
   mechanic_reasons?: string[];
 }
 
-export const CustomerDashboardService = {
-  // Получение водителей для конкретного заказчика
- async getDrivers(user: any): Promise<CustomerDriver[]> {
-    const userId = user.id;
+export interface CustomerBalanceTransaction {
+  id: number;
+  customer_id: number;
+  amount: number;
+  type: string;
+  description: string | null;
+  inspection_id: number | null;
+  balance_after: number | null;
+  created_at: string;
+  driver_id: number | null;
+  driver_name: string | null;
+  driver_car_brand: string | null;
+  driver_car_number: string | null;
+}
 
-    // Шаг 1: Пытаемся найти запись заказчика в таблице customers, у которой user_id равен нашему id из сессии
+export const CustomerDashboardService = {
+  async getDrivers(user: any): Promise<CustomerDriver[]> {
+    const userId = user.id;
     let customerIdToSearch = user.customer_id;
 
     if (!customerIdToSearch && userId) {
@@ -38,16 +50,10 @@ export const CustomerDashboardService = {
         .select("id")
         .eq("user_id", userId)
         .maybeSingle();
-
-      if (customerRecord) {
-        customerIdToSearch = customerRecord.id;
-      }
+      if (customerRecord) customerIdToSearch = customerRecord.id;
     }
 
-    // Если в customers ничего не нашлось, пробуем использовать сам userId как fallback
     const finalId = customerIdToSearch || userId;
-
-    // Шаг 2: Загружаем водителей по найденному ID
     const { data, error } = await supabase
       .from("drivers")
       .select("*")
@@ -70,10 +76,8 @@ export const CustomerDashboardService = {
     }));
   },
 
-  // Получение осмотров для списка водителей
   async getInspections(driverIds: number[]): Promise<CustomerInspection[]> {
     if (driverIds.length === 0) return [];
-
     const { data, error } = await supabase
       .from("inspections")
       .select("*")
@@ -94,6 +98,50 @@ export const CustomerDashboardService = {
       requested_at: item.requested_at,
       alcohol: item.alcohol || 0,
       mechanic_reasons: item.mechanic_reasons || [],
+    }));
+  },
+
+  async getBalanceTransactions(customerId: number): Promise<CustomerBalanceTransaction[]> {
+    if (!customerId) return [];
+
+    const { data, error } = await supabase
+      .from("customer_balance_transactions")
+      .select(`
+        id,
+        customer_id,
+        amount,
+        type,
+        description,
+        inspection_id,
+        balance_after,
+        created_at,
+        driver_id,
+        driver_name,
+        driver_car_brand,
+        driver_car_number
+      `)
+      .eq("customer_id", customerId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (error) {
+      console.error("Ошибка загрузки истории баланса заказчика:", error.message);
+      return [];
+    }
+
+    return (data || []).map((item: any) => ({
+      id: item.id,
+      customer_id: item.customer_id,
+      amount: Number(item.amount || 0),
+      type: item.type || "",
+      description: item.description || null,
+      inspection_id: item.inspection_id ?? null,
+      balance_after: item.balance_after == null ? null : Number(item.balance_after),
+      created_at: item.created_at,
+      driver_id: item.driver_id ?? null,
+      driver_name: item.driver_name || null,
+      driver_car_brand: item.driver_car_brand || null,
+      driver_car_number: item.driver_car_number || null,
     }));
   },
 };
