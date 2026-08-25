@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
-import type { Driver } from "@/types/database.types"; // Обновите путь при необходимости
+import type { Driver } from "@/types/database.types";
 
 interface DeleteDriverModalProps {
   isOpen: boolean;
@@ -45,20 +45,23 @@ export default function DeleteDriverModal({
         </div>
 
         <div className="px-6 py-5">
-          <p className="text-sm text-slate-600 mb-4">
+          <p className="mb-4 text-sm text-slate-600">
             Вы уверены, что хотите удалить водителя{" "}
             <strong className="text-slate-900">
               {driver.name || "Без имени"}
             </strong>
-            ? 
+            ?
           </p>
-          
-          <div className="rounded-lg bg-slate-50 p-3 text-xs text-slate-500 border border-slate-200">
-            <strong>Внимание:</strong> Если у этого водителя есть привязанные истории осмотров, удаление будет отклонено системой до их очистки.
+
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+            <strong>Важно:</strong> текущий водитель будет удалён из списка, но
+            история его осмотров и финансовых списаний заказчика сохранится.
+            В истории списаний будут сохранены ФИО и данные автомобиля на момент
+            проведения осмотра.
           </div>
 
           {errorMessage && (
-            <div className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700 border border-red-200">
+            <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               {errorMessage}
             </div>
           )}
