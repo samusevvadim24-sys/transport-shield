@@ -42,16 +42,24 @@ export default function CustomerHistoryBridge() {
       setOpen(true);
     };
 
-    // Показываем пользователю, что название заказчика кликабельное.
+    // Название заказчика — кликабельный элемент. Применяем inline-style
+    // и к дочерним элементам, чтобы никакой вложенный span не вернул text-cursor.
     const applyCustomerCursor = () => {
       document.querySelectorAll("tbody tr td:first-child, article").forEach((source) => {
         const nameElement = source.querySelector("div.font-semibold.text-slate-900, h3");
-        if (!nameElement) return;
+        if (!(nameElement instanceof HTMLElement)) return;
 
-        // Используем inline-style, чтобы курсор гарантированно применялся,
-        // независимо от порядка/генерации Tailwind-классов.
-        nameElement.classList.add("cursor-pointer", "hover:underline");
-        (nameElement as HTMLElement).style.cursor = "pointer";
+        nameElement.classList.add("cursor-pointer", "hover:underline", "select-none");
+        nameElement.style.cursor = "pointer";
+        nameElement.style.userSelect = "none";
+        nameElement.style.webkitUserSelect = "none";
+
+        nameElement.querySelectorAll("*").forEach((child) => {
+          if (!(child instanceof HTMLElement)) return;
+          child.style.cursor = "pointer";
+          child.style.userSelect = "none";
+          child.style.webkitUserSelect = "none";
+        });
       });
     };
 
