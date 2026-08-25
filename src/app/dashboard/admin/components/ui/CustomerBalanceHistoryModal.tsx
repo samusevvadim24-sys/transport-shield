@@ -2,20 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { Car, Clock3, X } from "lucide-react";
-import { DatabaseCustomer, DatabaseCustomerBalanceTransaction } from "../../../../../types/database.types";
-import { fetchCustomerInspectionCharges } from "../../../../../services/customers-admin.service";
+import { DatabaseCustomer } from "../../../../../types/database.types";
+import { CustomerInspectionCharge, fetchCustomerInspectionCharges } from "../../../../../services/customer-balance-history.service";
 
 interface CustomerBalanceHistoryModalProps {
   isOpen: boolean;
   customer: DatabaseCustomer | null;
   onClose: () => void;
 }
-
-type HistoryItem = DatabaseCustomerBalanceTransaction & {
-  driver_name: string | null;
-  car_brand: string | null;
-  car_number: string | null;
-};
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ru-RU", {
@@ -28,7 +22,7 @@ function formatDate(value: string) {
 }
 
 export default function CustomerBalanceHistoryModal({ isOpen, customer, onClose }: CustomerBalanceHistoryModalProps) {
-  const [items, setItems] = useState<HistoryItem[]>([]);
+  const [items, setItems] = useState<CustomerInspectionCharge[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
