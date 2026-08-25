@@ -46,7 +46,7 @@ export default function CustomerSidebar({ viewDate, today, monthLabel, selectedD
         <button onClick={() => { setSelectedDate(today); setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); }} className="mt-4 w-full rounded-xl bg-slate-50 py-2 text-xs font-semibold text-slate-600">Сегодня</button>
       </div>
 
-      <div className="mt-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mt-4 hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:block">
         <div className="flex items-center justify-between"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Баланс</div><h3 className="mt-1 text-lg font-bold">История операций</h3></div><Wallet size={20} className="text-[#0b6078]"/></div>
         <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto pr-1">
           {transactions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-400">Операций пока нет</div> : transactions.map(t => {
