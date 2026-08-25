@@ -1,0 +1,11 @@
+# Firebase App Hosting configuration for Transport Shield.
+#
+# Supabase remains the backend/database. Configure the Supabase environment
+# variables in Firebase Console -> App Hosting -> Settings -> Environment.
+# Do not commit secret values here.
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  maxInstances: 10
+  concurrency: 80
