@@ -32,3 +32,64 @@ button {
 button:disabled {
   cursor: not-allowed;
 }
+
+/*
+ * Общая мобильная оболочка модальных окон.
+ * Админские модалки используют fixed + inset-0, поэтому здесь
+ * централизованно исправляем проблемы с нижней мобильной навигацией,
+ * высотой viewport и длинными формами.
+ */
+@media (max-width: 767px) {
+  /* Любая модалка должна находиться выше нижней навигации. */
+  [class*="fixed"][class*="inset-0"] {
+    z-index: 200 !important;
+    align-items: flex-end !important;
+    padding: 0.5rem !important;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom)) !important;
+    overscroll-behavior: contain;
+  }
+
+  /* Контейнер модалки превращаем в удобный bottom-sheet. */
+  [class*="fixed"][class*="inset-0"] > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: calc(100dvh - 1rem - env(safe-area-inset-top)) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Длинные формы не должны уводить кнопки за экран. */
+  [class*="fixed"][class*="inset-0"] form {
+    min-width: 0;
+  }
+
+  /* Нижняя панель действий остаётся доступной при прокрутке формы. */
+  [class*="fixed"][class*="inset-0"] [class*="border-t"] {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    background: #ffffff;
+  }
+
+  /* Поля и сетки не должны вызывать горизонтальный скролл. */
+  [class*="fixed"][class*="inset-0"] input,
+  [class*="fixed"][class*="inset-0"] select,
+  [class*="fixed"][class*="inset-0"] textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  [class*="fixed"][class*="inset-0"] [class*="grid-cols-3"],
+  [class*="fixed"][class*="inset-0"] [class*="grid-cols-2"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@supports (height: 100dvh) {
+  @media (max-width: 767px) {
+    [class*="fixed"][class*="inset-0"] > div {
+      max-height: calc(100dvh - 1rem - env(safe-area-inset-top)) !important;
+    }
+  }
+}
