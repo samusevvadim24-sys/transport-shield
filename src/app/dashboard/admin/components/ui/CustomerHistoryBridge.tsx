@@ -42,23 +42,19 @@ export default function CustomerHistoryBridge() {
       setOpen(true);
     };
 
-    // Название заказчика — кликабельный элемент. Применяем inline-style
-    // и к дочерним элементам, чтобы никакой вложенный span не вернул text-cursor.
     const applyCustomerCursor = () => {
       document.querySelectorAll("tbody tr td:first-child, article").forEach((source) => {
         const nameElement = source.querySelector("div.font-semibold.text-slate-900, h3");
         if (!(nameElement instanceof HTMLElement)) return;
 
-        nameElement.classList.add("cursor-pointer", "hover:underline", "select-none");
-        nameElement.style.cursor = "pointer";
-        nameElement.style.userSelect = "none";
-        nameElement.style.webkitUserSelect = "none";
-
-        nameElement.querySelectorAll("*").forEach((child) => {
-          if (!(child instanceof HTMLElement)) return;
-          child.style.cursor = "pointer";
-          child.style.userSelect = "none";
-          child.style.webkitUserSelect = "none";
+        // Курсор ставим не только на контейнер имени, но и на каждый вложенный
+        // span, чтобы браузер нигде не переключался на текстовый курсор.
+        const elements = [nameElement, ...Array.from(nameElement.querySelectorAll("*"))];
+        elements.forEach((element) => {
+          if (!(element instanceof HTMLElement)) return;
+          element.style.setProperty("cursor", "pointer", "important");
+          element.style.setProperty("user-select", "none", "important");
+          element.style.setProperty("-webkit-user-select", "none", "important");
         });
       });
     };
