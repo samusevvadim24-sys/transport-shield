@@ -43,6 +43,7 @@ export interface DatabaseInspection {
   medical_date: string | null; breathalyzer_value: number | null; blood_pressure_systolic: number | null;
   blood_pressure_diastolic: number | null; drug_intoxication: boolean; mechanic_status: string | null;
   mechanic_date: string | null; mechanic_issues: string[] | null; overall_status: string | null; completed_at: string | null;
+  medical_examiner_id: number | null; mechanic_examiner_id: number | null;
 }
 export interface Inspection {
   docId: string; id: number; driver: string; customer: string; date: string; dateISO?: string; status: InspectionStatus;
@@ -50,4 +51,5 @@ export interface Inspection {
   car: { number: string; brand: string }; medic: string; medicTime: string; mechanic: string; mechanicTime: string;
   medicStatus: string; mechanicStatus: string; alcohol?: number | null; bloodPressureSystolic?: number | null;
   bloodPressureDiastolic?: number | null; drugIntoxication?: boolean; mechanicReasons?: string[];
+  medicalExaminerId?: number | null; mechanicExaminerId?: number | null;
 }
