@@ -24,7 +24,6 @@ import {
   LogOut,
   Menu,
   Search,
-  ShieldCheck,
   Users,
   Wallet,
   X,
@@ -71,6 +70,7 @@ const statusDot = (status: string) => {
 export default function CustomerPage() {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [customerProfile, setCustomerProfile] = useState<{ name: string } | null>(null);
   const [drivers, setDrivers] = useState<CustomerDriver[]>([]);
   const [allChecks, setAllChecks] = useState<CheckData[]>([]);
   const [balance, setBalance] = useState<number | null>(null);
@@ -113,10 +113,13 @@ export default function CustomerPage() {
         if (customerId) {
           const { data } = await supabase
             .from("customers")
-            .select("balance")
+            .select("name, balance")
             .eq("id", customerId)
             .maybeSingle();
-          if (data) setBalance(Number(data.balance ?? 0));
+          if (data) {
+            setCustomerProfile({ name: normalizeString(data.name) });
+            setBalance(Number(data.balance ?? 0));
+          }
         }
       } catch (error) {
         console.error("Ошибка загрузки профиля заказчика:", error);
@@ -201,7 +204,7 @@ export default function CustomerPage() {
     without: Math.max(0, drivers.length - monthCheckedDriverIds.size),
   };
 
-  const customerName = currentUser?.name || `Заказчик #${currentUser?.customer_id || currentUser?.id || "—"}`;
+  const customerName = customerProfile?.name || currentUser?.name || "Заказчик";
   const monthLabel = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(viewDate);
   const formattedDate = selectedDate.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 
@@ -237,8 +240,8 @@ export default function CustomerPage() {
             <button onClick={() => setMobileMenu(true)} className="rounded-xl p-2 hover:bg-white/10 md:hidden" aria-label="Меню">
               <Menu size={21} />
             </button>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/10">
-              <ShieldCheck size={22} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white ring-1 ring-white/10">
+              <img src="/logo.png" alt="Транспортный Щит" className="h-full w-full object-contain p-1" />
             </div>
             <div className="min-w-0">
               <div className="truncate text-sm font-bold sm:text-base">Транспортный Щит</div>
@@ -314,152 +317,107 @@ export default function CustomerPage() {
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Не допущено</span><XCircle className="text-red-500" size={20} /></div>
-            <div className="mt-3 text-3xl font-bold text-red-600">{stats.rejected}</div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">{stats.rejected}</div>
             <div className="mt-1 text-xs text-slate-500">за {formattedDate}</div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Ожидание</span><Clock3 className="text-amber-500" size={20} /></div>
-            <div className="mt-3 text-3xl font-bold text-amber-600">{stats.pending}</div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">{stats.pending}</div>
             <div className="mt-1 text-xs text-slate-500">за {formattedDate}</div>
           </div>
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between"><span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Без осмотра</span><AlertTriangle className="text-slate-400" size={20} /></div>
-            <div className="mt-3 text-3xl font-bold text-slate-700">{stats.without}</div>
-            <div className="mt-1 text-xs text-slate-500">из {drivers.length} водителей</div>
+            <div className="mt-3 text-3xl font-bold text-slate-900">{stats.without}</div>
+            <div className="mt-1 text-xs text-slate-500">за {formattedDate}</div>
           </div>
         </section>
 
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-lg font-bold text-slate-900">Календарь осмотров</div>
-              <div className="text-xs text-slate-500">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</div>
+        <section className="mt-6 grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <button onClick={() => changeMonth(-1)} className="rounded-xl p-2 hover:bg-slate-100"><ChevronLeft size={18} /></button>
+              <div className="text-sm font-bold capitalize">{monthLabel}</div>
+              <button onClick={() => changeMonth(1)} disabled={viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth()} className="rounded-xl p-2 hover:bg-slate-100 disabled:opacity-30"><ChevronRight size={18} /></button>
             </div>
-            <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-1.5 sm:justify-start">
-              <button onClick={() => changeMonth(-1)} className="rounded-lg p-2 text-slate-500 hover:bg-white hover:text-slate-900"><ChevronLeft size={18} /></button>
-              <div className="flex max-w-[calc(100vw-130px)] gap-1 overflow-x-auto px-1">
-                {days.map((day) => {
-                  const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-                  const selected = isSameDay(date, selectedDate);
-                  const isToday = isSameDay(date, today);
-                  return (
-                    <button key={day} onClick={() => setSelectedDate(date)} className={`flex h-9 min-w-9 items-center justify-center rounded-lg px-2 text-xs font-semibold transition ${selected ? "bg-[#062a3a] text-white" : isToday ? "bg-white text-[#062a3a] ring-1 ring-[#062a3a]/20" : "text-slate-500 hover:bg-white hover:text-slate-900"}`}>
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-              <button onClick={() => changeMonth(1)} disabled={viewDate.getFullYear() > today.getFullYear() || (viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() >= today.getMonth())} className="rounded-lg p-2 text-slate-500 hover:bg-white disabled:opacity-30"><ChevronRight size={18} /></button>
+            <div className="mt-5 grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-slate-400">
+              {['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map((d) => <div key={d}>{d}</div>)}
             </div>
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-bold">Водители</h2>
-              <p className="mt-1 text-xs text-slate-500">Состояние прохождений на {formattedDate}</p>
-            </div>
-            <div className="relative w-full sm:w-80">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск водителя или автомобиля" className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-9 text-sm outline-none transition focus:border-[#062a3a] focus:bg-white" />
-              {search && <button onClick={() => setSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"><X size={15} /></button>}
-            </div>
-          </div>
-
-          {checksLoading && drivers.length > 0 && (
-            <div className="flex items-center justify-center gap-2 border-b border-slate-100 py-4 text-sm text-slate-500"><div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#062a3a]" /> Обновляем статусы...</div>
-          )}
-
-          {filteredDrivers.length === 0 ? (
-            <div className="px-6 py-16 text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"><Users size={24} /></div>
-              <div className="mt-4 font-semibold">Водители не найдены</div>
-              <p className="mt-1 text-sm text-slate-500">{search ? "Измените поисковый запрос." : "У заказчика пока нет водителей."}</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {filteredDrivers.map((driver) => {
-                const driverChecks = getChecksForDriver(driver.id);
-                const latest = driverChecks[driverChecks.length - 1];
+            <div className="mt-2 grid grid-cols-7 gap-1">
+              {Array.from({ length: (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7 }).map((_, i) => <div key={`empty-${i}`} />)}
+              {days.map((day) => {
+                const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+                const selected = isSameDay(date, selectedDate);
+                const count = allChecks.filter((c) => c.dateISO === getFormattedISO(date)).length;
                 return (
-                  <div key={driver.id} className="p-5 transition hover:bg-slate-50/70">
-                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="flex min-w-0 items-center gap-4">
-                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#062a3a]/5 text-[#062a3a]"><Car size={22} /></div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="truncate font-bold text-slate-900">{driver.name || "Без имени"}</h3>
-                            <span className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-500">№ {driver.number || driver.driver_id || "—"}</span>
-                          </div>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                            <span>{driver.car_brand || "Автомобиль не указан"}</span>
-                            {driver.car_number && <span className="rounded border border-slate-200 bg-white px-1.5 py-0.5 font-mono">{driver.car_number}</span>}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:min-w-[560px]">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Медик</div>
-                          <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${statusDot(latest?.medical_status || "Ожидание")}`} />
-                            <span className="text-sm font-semibold">{latest?.medical_status || "Нет данных"}</span>
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Механик</div>
-                          <div className="flex items-center gap-2">
-                            <span className={`h-2 w-2 rounded-full ${statusDot(latest?.mechanic_status || "Ожидание")}`} />
-                            <span className="text-sm font-semibold">{latest?.mechanic_status || "Нет данных"}</span>
-                          </div>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
-                          <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Итог</div>
-                          {latest ? <span className={`inline-flex rounded-lg border px-2.5 py-1 text-xs font-bold ${statusTone(latest.overall_status)}`}>{latest.overall_status}</span> : <span className="text-sm font-semibold text-slate-400">Нет данных</span>}
-                        </div>
-                      </div>
-                    </div>
-
-                    {driverChecks.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
-                        {driverChecks.map((check) => (
-                          <div key={check.id} className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-xs text-slate-500">
-                            <Clock3 size={12} />
-                            <span>{check.time || "—"}</span>
-                            <span className={`h-1.5 w-1.5 rounded-full ${statusDot(check.overall_status)}`} />
-                            <span className="font-semibold text-slate-700">{check.overall_status}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <button key={day} onClick={() => setSelectedDate(date)} className={`relative h-9 rounded-lg text-xs font-semibold ${selected ? 'bg-[#0b6078] text-white' : 'hover:bg-slate-100'}`}>
+                    {day}{count > 0 && <span className={`absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${selected ? 'bg-white' : 'bg-[#0b6078]'}`} />}
+                  </button>
                 );
               })}
             </div>
-          )}
-        </section>
-
-        <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div><h2 className="font-bold">Сводка за месяц</h2><p className="mt-1 text-xs text-slate-500">Общая картина по выбранному месяцу</p></div>
-              <Activity className="text-slate-300" size={22} />
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-xl bg-emerald-50 p-4"><div className="text-2xl font-bold text-emerald-700">{monthStats.approved}</div><div className="mt-1 text-xs text-emerald-700/70">Допущено</div></div>
-              <div className="rounded-xl bg-red-50 p-4"><div className="text-2xl font-bold text-red-700">{monthStats.rejected}</div><div className="mt-1 text-xs text-red-700/70">Не допущено</div></div>
-              <div className="rounded-xl bg-amber-50 p-4"><div className="text-2xl font-bold text-amber-700">{monthStats.pending}</div><div className="mt-1 text-xs text-amber-700/70">Ожидание</div></div>
-              <div className="rounded-xl bg-slate-100 p-4"><div className="text-2xl font-bold text-slate-700">{monthStats.without}</div><div className="mt-1 text-xs text-slate-500">Без осмотра</div></div>
-            </div>
+            <button onClick={() => { setSelectedDate(today); setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); }} className="mt-4 w-full rounded-xl bg-slate-50 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100">Сегодня</button>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#062a3a]/5 text-[#062a3a]"><Building2 size={19} /></div><div><h2 className="font-bold">Компания</h2><p className="text-xs text-slate-500">Данные аккаунта</p></div></div>
-            <div className="mt-5 space-y-3 text-sm">
-              <div className="flex justify-between gap-4 border-b border-slate-100 pb-3"><span className="text-slate-400">Название</span><span className="text-right font-semibold">{customerName}</span></div>
-              <div className="flex justify-between gap-4 border-b border-slate-100 pb-3"><span className="text-slate-400">Логин</span><span className="font-medium">{currentUser?.login || "—"}</span></div>
-              <div className="flex justify-between gap-4"><span className="text-slate-400">Водителей</span><span className="font-semibold">{drivers.length}</span></div>
+          <div>
+            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+              <div><h2 className="text-xl font-bold">Водители</h2><p className="mt-1 text-sm text-slate-500">Результаты осмотров на {formattedDate}</p></div>
+              <div className="relative w-full sm:w-[280px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
+                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск водителя или авто..." className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#0b6078]" />
+              </div>
+            </div>
+
+            {checksLoading ? (
+              <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Загружаем результаты...</div>
+            ) : (
+              <div className="mt-5 grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
+                {filteredDrivers.map((driver) => {
+                  const driverChecks = getChecksForDriver(driver.id);
+                  const latest = driverChecks[driverChecks.length - 1];
+                  return (
+                    <div key={driver.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><Car size={14} /> {driver.car_brand || 'Автомобиль'} {driver.car_number ? `• ${driver.car_number}` : ''}</div>
+                          <div className="mt-2 truncate text-base font-bold">{driver.name || 'Без имени'}</div>
+                          {driver.number && <div className="mt-1 text-xs text-slate-400">Табельный № {driver.number}</div>}
+                        </div>
+                        <div className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${latest ? statusTone(latest.overall_status) : 'border-slate-200 bg-slate-50 text-slate-400'}`}>{latest ? latest.overall_status : 'Нет осмотра'}</div>
+                      </div>
+                      {latest ? (
+                        <div className="mt-5 space-y-2 border-t border-slate-100 pt-4 text-xs">
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Медик</span><span className="flex items-center gap-2 font-semibold"><span className={`h-2 w-2 rounded-full ${statusDot(latest.medical_status)}`} />{latest.medical_status || '—'}</span></div>
+                          <div className="flex items-center justify-between"><span className="text-slate-500">Механик</span><span className="flex items-center gap-2 font-semibold"><span className={`h-2 w-2 rounded-full ${statusDot(latest.mechanic_status)}`} />{latest.mechanic_status || '—'}</span></div>
+                          <div className="flex items-center justify-between text-slate-400"><span>Время</span><span>{latest.time}</span></div>
+                        </div>
+                      ) : (
+                        <div className="mt-5 border-t border-slate-100 pt-4 text-xs text-slate-400">За выбранную дату осмотр не зарегистрирован.</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between"><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Сводка</div><h3 className="mt-1 text-lg font-bold capitalize">{monthLabel}</h3></div><Activity className="text-[#0b6078]" size={22} /></div>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                ['Допущено', monthStats.approved, 'text-emerald-600'],
+                ['Не допущено', monthStats.rejected, 'text-red-600'],
+                ['Ожидание', monthStats.pending, 'text-amber-600'],
+                ['Без осмотра', monthStats.without, 'text-slate-500'],
+              ].map(([label, value, color]) => <div key={String(label)} className="rounded-2xl bg-slate-50 p-4"><div className={`text-2xl font-bold ${color}`}>{value}</div><div className="mt-1 text-[11px] text-slate-500">{label}</div></div>)}
+            </div>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3"><div className="rounded-xl bg-slate-100 p-2.5"><Building2 size={19} className="text-slate-600" /></div><div><div className="text-xs font-bold uppercase tracking-wider text-slate-400">Компания</div><h3 className="mt-1 text-lg font-bold">{customerName}</h3></div></div>
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl border border-slate-100 p-4"><div className="text-xs text-slate-400">Логин</div><div className="mt-1 font-semibold">{currentUser?.login || '—'}</div></div>
+              <div className="rounded-2xl border border-slate-100 p-4"><div className="text-xs text-slate-400">Водителей</div><div className="mt-1 font-semibold">{drivers.length}</div></div>
             </div>
           </div>
         </section>
