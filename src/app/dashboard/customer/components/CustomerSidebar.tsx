@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight, Wallet, ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import type { CustomerBalanceTransaction } from "@/services/customer-dashboard.service";
+import type { CheckData } from "../types";
 
 interface Props {
   viewDate: Date;
@@ -9,13 +10,16 @@ interface Props {
   monthLabel: string;
   selectedDate: Date;
   transactions: CustomerBalanceTransaction[];
+  checks: CheckData[];
   setViewDate: (date: Date) => void;
   setSelectedDate: (date: Date) => void;
 }
 
-export default function CustomerSidebar({ viewDate, today, monthLabel, selectedDate, transactions, setViewDate, setSelectedDate }: Props) {
+export default function CustomerSidebar({ viewDate, today, monthLabel, selectedDate, transactions, checks, setViewDate, setSelectedDate }: Props) {
   const days = Array.from({ length: new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate() }, (_, i) => i + 1)
     .filter(d => new Date(viewDate.getFullYear(), viewDate.getMonth(), d) <= new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+
+  const inspectionDates = new Set(checks.map(c => c.dateISO));
 
   return (
     <div>
@@ -30,8 +34,13 @@ export default function CustomerSidebar({ viewDate, today, monthLabel, selectedD
           {Array.from({ length: (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7 }).map((_, i) => <div key={i}/>) }
           {days.map(d => {
             const date = new Date(viewDate.getFullYear(), viewDate.getMonth(), d);
+            const dateISO = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
             const selected = date.toDateString() === selectedDate.toDateString();
-            return <button key={d} onClick={() => setSelectedDate(date)} className={`relative h-9 rounded-lg text-xs font-semibold ${selected ? "bg-[#0b6078] text-white" : "hover:bg-slate-100"}`}>{d}</button>;
+            const hasInspections = inspectionDates.has(dateISO);
+            return <button key={d} onClick={() => setSelectedDate(date)} className={`relative h-9 rounded-lg text-xs font-semibold ${selected ? "bg-[#0b6078] text-white" : "hover:bg-slate-100"}`}>
+              {d}
+              {hasInspections && <span className={`absolute bottom-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full ${selected ? "bg-emerald-300" : "bg-emerald-500"}`} />}
+            </button>;
           })}
         </div>
         <button onClick={() => { setSelectedDate(today); setViewDate(new Date(today.getFullYear(), today.getMonth(), 1)); }} className="mt-4 w-full rounded-xl bg-slate-50 py-2 text-xs font-semibold text-slate-600">Сегодня</button>
