@@ -42,8 +42,23 @@ export default function CustomerHistoryBridge() {
       setOpen(true);
     };
 
+    // Показываем пользователю, что название заказчика кликабельное.
+    const applyCustomerCursor = () => {
+      document.querySelectorAll("tbody tr td:first-child, article").forEach((source) => {
+        const nameElement = source.querySelector("div.font-semibold.text-slate-900, h3");
+        if (nameElement) nameElement.classList.add("cursor-pointer");
+      });
+    };
+
     document.addEventListener("click", handleClick);
-    return () => document.removeEventListener("click", handleClick);
+    applyCustomerCursor();
+    const observer = new MutationObserver(applyCustomerCursor);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      document.removeEventListener("click", handleClick);
+      observer.disconnect();
+    };
   }, []);
 
   return (
