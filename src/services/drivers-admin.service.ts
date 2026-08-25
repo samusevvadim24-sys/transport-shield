@@ -81,7 +81,21 @@ export async function updateDriver(id: string | number, formData: DriverFormData
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
 
-export async function deleteDriverRecord(id: string | number, userId?: number | null) {
-  try { const { error: driverError } = await supabase.from("drivers").delete().eq("id", id); if (driverError) return { error: driverError }; if (userId) { const { error: userError } = await supabase.from("users").delete().eq("id", userId); if (userError) console.error("Ошибка при удалении связанного пользователя водителя:", userError); } return { error: null }; }
-  catch (err) { return { error: { message: toError(err).message } }; }
+export async function deleteDriverRecord(id: string | number, _userId?: number | null) {
+  try {
+    const session = AuthService.getSession();
+    if (!session || session.role !== "admin") {
+      return { error: { message: "Недостаточно прав для удаления водителя. Войдите как администратор." } };
+    }
+
+    const { error } = await supabase.rpc("delete_driver_record", {
+      p_admin_id: Number(session.id),
+      p_driver_id: Number(id),
+    });
+
+    if (error) return { error };
+    return { error: null };
+  } catch (err) {
+    return { error: { message: toError(err).message } };
+  }
 }
