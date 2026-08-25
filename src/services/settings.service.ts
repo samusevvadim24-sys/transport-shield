@@ -15,21 +15,99 @@ export interface SystemSettings {
   organization_director_name: string;
 }
 
+const EMPTY: SystemSettings = {
+  id: 1,
+  medic_surname: "",
+  mechanic_surname: "",
+  medical_exam_price: 0.9,
+  mechanic_exam_price: 0.9,
+  organization_name: "",
+  organization_address: "",
+  organization_bank_account: "",
+  organization_unp: "",
+  organization_phone: "",
+  organization_email: "",
+  organization_director_name: "",
+};
+
 export async function fetchSystemSettings(): Promise<SystemSettings> {
-  const { data, error } = await supabase.from("system_settings").select("*").eq("id", 1).single();
+  const { data, error } = await supabase
+    .from("system_settings")
+    .select(
+      "id, medic_last_name, mechanic_last_name, medical_inspection_price, mechanic_inspection_price, organization_name, organization_address, organization_bank_account, organization_unp, organization_phone, organization_email, director_name"
+    )
+    .eq("id", 1)
+    .maybeSingle();
+
   if (error) throw error;
-  return data as SystemSettings;
+  if (!data) return EMPTY;
+
+  return {
+    id: Number(data.id),
+    medic_surname: data.medic_last_name ?? "",
+    mechanic_surname: data.mechanic_last_name ?? "",
+    medical_exam_price: Number(data.medical_inspection_price ?? 0.9),
+    mechanic_exam_price: Number(data.mechanic_inspection_price ?? 0.9),
+    organization_name: data.organization_name ?? "",
+    organization_address: data.organization_address ?? "",
+    organization_bank_account: data.organization_bank_account ?? "",
+    organization_unp: data.organization_unp ?? "",
+    organization_phone: data.organization_phone ?? "",
+    organization_email: data.organization_email ?? "",
+    organization_director_name: data.director_name ?? "",
+  };
 }
 
 export async function updateSystemSettings(values: Omit<SystemSettings, "id">) {
-  return supabase.from("system_settings").upsert({ id: 1, ...values, updated_at: new Date().toISOString() });
+  return supabase.from("system_settings").upsert({
+    id: 1,
+    medic_last_name: values.medic_surname.trim(),
+    mechanic_last_name: values.mechanic_surname.trim(),
+    medical_inspection_price: Number(values.medical_exam_price) || 0,
+    mechanic_inspection_price: Number(values.mechanic_exam_price) || 0,
+    organization_name: values.organization_name.trim(),
+    organization_address: values.organization_address.trim(),
+    organization_bank_account: values.organization_bank_account.trim(),
+    organization_unp: values.organization_unp.trim(),
+    organization_phone: values.organization_phone.trim(),
+    organization_email: values.organization_email.trim(),
+    director_name: values.organization_director_name.trim(),
+    updated_at: new Date().toISOString(),
+  });
 }
 
-export async function updateAdminPassword(userId: number, currentPassword: string, newPassword: string) {
-  const { data: user, error: readError } = await supabase.from("users").select("id,password,role").eq("id", userId).eq("role", "admin").single();
-  if (readError || !user) return { error: new Error("Администратор не найден") };
-  if (user.password !== currentPassword) return { error: new Error("Текущий пароль указан неверно") };
-  if (newPassword.trim().length < 6) return { error: new Error("Новый пароль должен содержать минимум 6 символов") };
-  const { error } = await supabase.from("users").update({ password: newPassword.trim() }).eq("id", userId).eq("role", "admin");
+export async function updateAdminPassword(
+  userId: number,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const current = currentPassword.trim();
+  const next = newPassword.trim();
+
+  if (next.length < 6) {
+    return { error: new Error("Новый пароль должен содержать минимум 6 символов") };
+  }
+
+  if (!current) {
+    return { error: new Error("Введите текущий пароль") };
+  }
+
+  const { data: user, error: readError } = await supabase
+    .from("users")
+    .select("id,password,role")
+    .eq("id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  if (readError) return { error: readError };
+  if (!user) return { error: new Error("Администратор не найден") };
+  if (user.password !== current) return { error: new Error("Текущий пароль указан неверно") };
+
+  const { error } = await supabase
+    .from("users")
+    .update({ password: next })
+    .eq("id", userId)
+    .eq("role", "admin");
+
   return { error };
 }
