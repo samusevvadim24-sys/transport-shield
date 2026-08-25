@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DatabaseCustomer } from "@/types/database.types";
-import { fetchSystemSettings, SystemSettings } from "../../../../../services/settings.service";
+import { fetchSystemSettings, SystemSettings } from "../../../../../../services/settings.service";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "__________";
@@ -42,7 +42,6 @@ export default function CustomerContractPage() {
 
   if (loading) return <div className="p-10 text-center">Загрузка...</div>;
 
-  // Реквизиты Исполнителя всегда берутся из Админка → Настройки → Данные организации.
   const executor = {
     name: settings?.organization_name || "________________________",
     address: settings?.organization_address || "________________________",
@@ -93,7 +92,7 @@ export default function CustomerContractPage() {
           <p className="text-justify font-bold mb-1">2.1. Исполнитель обязуется:</p>
           <p className="text-justify mb-2">2.1.1. Организовывать и проводить медицинское освидетельствование на допуск к работе водителей Заказчика, который представляет собой: идентификацию личности водителя, опрос о состоянии здоровья, измерение при медицинских показаниях температуры тела, пульса и артериального давления, проведение пробы на наличие/отсутствие паров абсолютного этилового спирта, принятие решения о допуске или не допуске водителя, с последующей отметкой в журнале предрейсовых медицинских осмотров, с отстранением от работы лиц, находящихся в нетрезвом или болезненном состоянии, с направлением их в случае необходимости на дополнительное медицинское освидетельствование.</p>
           <p className="text-justify mb-2">2.1.2. Организовывать и проводить предрейсовый осмотр автотранспортных средств Заказчика, который представляет собой документально-визуальный контроль готовности транспортного средства к выезду на линию и включает в себя: проверку наличия, сроков действия и соответствия страховки на автомобиль и государственного технического осмотра транспортного средства, проверку исправности светового оборудования, проверку соответствия величины протектора шин, проверку целостности остекления транспортного средства, а также его укомплектованность действующей автомобильной аптечкой, огнетушителем, светоотражающим жилетом, принятие решения о допуске или не допуске транспортного средства, с последующей отметкой в журнале предрейсовых осмотров, с отстранением от рейса транспортных средств, находящихся в неисправном состоянии.</p>
-          <p className="text-justify mb-2">2.1.3. Регистрировать в журнале и отмечать в путевом листе, выданном Заказчиком: а) информацию о проводимом осмотре, с отметкой о допуске или не допуске водителя; б) информацию о проводимом осмотре, с отметкой о допуске или не допуске транспортного средства; в) при необходимости, по запросу Заказчика, предоставить доступ к данным предрейсовых осмотров и их результатам.</p>
+          <p className="text-justify mb-2">2.1.3. Регистрировать в журнале и отмечать в путевом листе, выданном Заказчиком: а) Информацию о проводимом осмотре, с отметкой о допуске или не допуске водителя. б) Информацию о проводимом осмотре, с отметкой о допуске или не допуске транспортного средства. в) При необходимости, по запросу Заказчика, предоставить доступ к данным предрейсовых осмотров и их результатам.</p>
           <p className="text-justify mb-2">2.1.4. Ежемесячно в срок до 5-го числа предоставлять посредством направления на электронную почту Заказчика акты по оказанным услугам за истекший отчетный период (месяц) с указанием количества, стоимости и других необходимых сведений.</p>
           <p className="text-justify font-bold mb-1">2.2. Исполнитель вправе:</p>
           <p className="text-justify mb-2">2.2.1. Предъявлять к сотрудникам Заказчика требования и давать указания, необходимость которых возникает в связи с оказанием услуг по предмету настоящего договора с целью их наиболее полного и качественного выполнения.</p>
@@ -158,8 +157,26 @@ export default function CustomerContractPage() {
 
           <h3 className="font-bold mt-6 mb-4">8. АДРЕСА И РЕКВИЗИТЫ СТОРОН</h3>
           <div className="grid grid-cols-2 gap-8 mb-8 text-sm">
-            <div><p className="font-bold mb-1">Исполнитель:</p><p><strong>{executor.name}</strong></p><p>{executor.address}</p><p>р/с: {executor.bankAccount}</p><p>УНП {executor.unp}</p><p>Тел: {executor.phone}</p><p>e-mail: {executor.email}</p><div className="mt-6">Директор _______________ / {executor.director}</div></div>
-            <div><p className="font-bold mb-1">Заказчик:</p><p><strong>{fullCustomerName}</strong></p><p>{customerAddress}</p><p>р/с: {customerAccount}</p><p>в {customerBank}</p><p>УНП {customerUnp}</p><p>Тел: {customerPhone}</p><div className="mt-6">Директор _______________ / {customerContactPerson}</div></div>
+            <div>
+              <p className="font-bold mb-1">Исполнитель:</p>
+              <p><strong>{executor.name}</strong></p>
+              <p>{executor.address}</p>
+              <p>р/с: {executor.bankAccount}</p>
+              <p>УНП {executor.unp}</p>
+              <p>Тел: {executor.phone}</p>
+              <p>e-mail: {executor.email}</p>
+              <div className="mt-6">Директор _______________ / {executor.director}</div>
+            </div>
+            <div>
+              <p className="font-bold mb-1">Заказчик:</p>
+              <p><strong>{fullCustomerName}</strong></p>
+              <p>{customerAddress}</p>
+              <p>р/с: {customerAccount}</p>
+              <p>в {customerBank}</p>
+              <p>УНП {customerUnp}</p>
+              <p>Тел: {customerPhone}</p>
+              <div className="mt-6">Директор _______________ / {customerContactPerson}</div>
+            </div>
           </div>
 
           <div className="border-t pt-6 mt-8">
@@ -169,12 +186,18 @@ export default function CustomerContractPage() {
             <p className="text-sm mb-2"><strong>Исполнитель:</strong> {executor.name}</p>
             <p className="text-sm mb-4"><strong>Заказчик:</strong> {fullCustomerName}</p>
             <p className="font-bold text-sm mb-2">Абонентское обслуживание:</p>
-            <table className="w-full border-collapse border border-black text-sm mb-4"><thead><tr><th className="border border-black p-1">№</th><th className="border border-black p-1">Наименование товара / услуги</th><th className="border border-black p-1">Ед. изм.</th><th className="border border-black p-1">Цена</th><th className="border border-black p-1">Ставка НДС</th><th className="border border-black p-1">Всего рублей</th></tr></thead><tbody>
-              <tr><td className="border border-black p-1 text-center">1</td><td className="border border-black p-1">Предрейсовое медицинское обследование водителей</td><td className="border border-black p-1 text-center">Освидетельствование</td><td className="border border-black p-1 text-right">{money(settings?.medical_exam_price)}</td><td className="border border-black p-1 text-center">Без НДС</td><td className="border border-black p-1 text-right">{money(settings?.medical_exam_price)} руб.</td></tr>
-              <tr><td className="border border-black p-1 text-center">2</td><td className="border border-black p-1">Документально-визуальный контроль готовности транспортного средства</td><td className="border border-black p-1 text-center">Осмотр</td><td className="border border-black p-1 text-right">{money(settings?.mechanic_exam_price)}</td><td className="border border-black p-1 text-center">Без НДС</td><td className="border border-black p-1 text-right">{money(settings?.mechanic_exam_price)} руб.</td></tr>
-            </tbody></table>
+            <table className="w-full border-collapse border border-black text-sm mb-4">
+              <thead><tr><th className="border border-black p-1">№</th><th className="border border-black p-1">Наименование товара / услуги</th><th className="border border-black p-1">Ед. изм.</th><th className="border border-black p-1">Цена</th><th className="border border-black p-1">Ставка НДС</th><th className="border border-black p-1">Всего рублей</th></tr></thead>
+              <tbody>
+                <tr><td className="border border-black p-1 text-center">1</td><td className="border border-black p-1">Предрейсовое медицинское обследование водителей</td><td className="border border-black p-1 text-center">Освидетельствование</td><td className="border border-black p-1 text-right">{money(settings?.medical_exam_price)}</td><td className="border border-black p-1 text-center">Без НДС</td><td className="border border-black p-1 text-right">{money(settings?.medical_exam_price)} руб.</td></tr>
+                <tr><td className="border border-black p-1 text-center">2</td><td className="border border-black p-1">Документально-визуальный контроль готовности транспортного средства</td><td className="border border-black p-1 text-center">Осмотр</td><td className="border border-black p-1 text-right">{money(settings?.mechanic_exam_price)}</td><td className="border border-black p-1 text-center">Без НДС</td><td className="border border-black p-1 text-right">{money(settings?.mechanic_exam_price)} руб.</td></tr>
+              </tbody>
+            </table>
             <p className="text-xs italic mb-6">Без НДС на основании абз. 4 п. 6 ст. 130 Налогового кодекса РБ.</p>
-            <div className="grid grid-cols-2 gap-8 text-sm mt-4"><div><p className="font-bold">Исполнитель:</p><p>{executor.name}</p><p className="mt-4">Директор _______________ / (подпись)</p></div><div><p className="font-bold">Заказчик:</p><p>{fullCustomerName}</p><p className="mt-4">Директор _______________ / (подпись)</p></div></div>
+            <div className="grid grid-cols-2 gap-8 text-sm mt-4">
+              <div><p className="font-bold">Исполнитель:</p><p>{executor.name}</p><p className="mt-4">Директор _______________ / (подпись)</p></div>
+              <div><p className="font-bold">Заказчик:</p><p>{fullCustomerName}</p><p className="mt-4">Директор _______________ / (подпись)</p></div>
+            </div>
           </div>
         </article>
       </main>
