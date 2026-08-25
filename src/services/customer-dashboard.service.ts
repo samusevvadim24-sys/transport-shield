@@ -104,25 +104,9 @@ export const CustomerDashboardService = {
   async getBalanceTransactions(customerId: number): Promise<CustomerBalanceTransaction[]> {
     if (!customerId) return [];
 
-    const { data, error } = await supabase
-      .from("customer_balance_transactions")
-      .select(`
-        id,
-        customer_id,
-        amount,
-        type,
-        description,
-        inspection_id,
-        balance_after,
-        created_at,
-        driver_id,
-        driver_name,
-        driver_car_brand,
-        driver_car_number
-      `)
-      .eq("customer_id", customerId)
-      .order("created_at", { ascending: false })
-      .limit(100);
+    const { data, error } = await supabase.rpc("get_customer_balance_history", {
+      p_customer_id: customerId,
+    });
 
     if (error) {
       console.error("Ошибка загрузки истории баланса заказчика:", error.message);
