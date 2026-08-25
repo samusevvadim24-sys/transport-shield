@@ -174,7 +174,16 @@ export default function CustomersTab() {
                         <div className="flex items-start gap-2.5">
                           <span className="inline-flex shrink-0 items-center justify-center rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-700 shadow-sm">{cust.number ? `№${cust.number}` : "—"}</span>
                           <div className="min-w-0">
-                            <div className="font-semibold text-slate-900">{cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}<span>{cust.name}</span></div>
+                            <div className="font-semibold text-slate-900">
+                              {cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}
+                              <span
+                                className="cursor-pointer select-none"
+                                style={{ cursor: "pointer", userSelect: "none" }}
+                                title="Открыть историю списаний"
+                              >
+                                {cust.name}
+                              </span>
+                            </div>
                             {cust.address && <div className="mt-0.5 line-clamp-1 text-xs text-slate-500">{cust.address}</div>}
                           </div>
                         </div>
@@ -218,8 +227,6 @@ export default function CustomersTab() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 border-t border-slate-100 bg-slate-50/50 p-3">
                   <button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors active:bg-slate-50"><FileText size={14} />Договор</button>
-                  <button type="button" onClick={() => openEdit(cust)} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-2 text-[11px] font-semibold text-sky-800 shadow-sm transition-colors active:bg-sky-100"><Edit size={14} />Изменить</button>
-                  <button type="button" onClick={() => openDelete(cust)} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-[#C53030]/15 bg-[#C53030]/5 px-2 text-[11px] font-semibold text-[#C53030] shadow-sm transition-colors active:bg-[#C53030]/10"><Trash2 size={14} />Удалить</button>
                 </div>
               </article>
             ))}
@@ -227,14 +234,8 @@ export default function CustomersTab() {
         </>
       )}
 
-      {totalPages > 1 && <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-2 pt-4 sm:mt-6 sm:flex-row">
-        <button type="button" disabled={currentPage === 1 || loading} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:text-sm"><ChevronLeft size={16} />Назад</button>
-        <div className="flex max-w-full items-center gap-1 overflow-x-auto py-1">{Array.from({ length: totalPages }, (_, i) => i + 1).filter((page) => page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)).reduce((acc: (number | string)[], page, index, arr) => { if (index > 0 && typeof arr[index - 1] === "number" && page - (arr[index - 1] as number) > 1) acc.push("..."); acc.push(page); return acc; }, []).map((page, idx) => page === "..." ? <span key={`sep-${idx}`} className="px-1 text-xs text-slate-400">...</span> : <button type="button" key={page} onClick={() => setCurrentPage(page as number)} className={`h-8 w-8 shrink-0 cursor-pointer rounded-xl text-xs font-medium transition-colors sm:h-9 sm:w-9 sm:text-sm ${currentPage === page ? "bg-[#042433] text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{page}</button>)}</div>
-        <button type="button" disabled={currentPage === totalPages || loading} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:text-sm">Вперед<ChevronRight size={16} /></button>
-      </div>}
-
       <CustomerModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingCustomer(null); }} customer={editingCustomer} onSave={handleSaveCustomer} />
-      <DeleteCustomerModal isOpen={isDeleteModalOpen} customer={deletingCustomer} loading={deleteLoading} errorMessage={deleteError} onClose={closeDelete} onConfirm={handleDeleteConfirm} />
+      <DeleteCustomerModal isOpen={isDeleteModalOpen} customer={deletingCustomer} onClose={closeDelete} onConfirm={handleDeleteConfirm} loading={deleteLoading} error={deleteError} />
       <CustomerBalanceTopUpModal isOpen={isBalanceModalOpen} customer={balanceCustomer} onClose={closeBalance} onSuccess={handleBalanceSuccess} />
     </div>
   );
