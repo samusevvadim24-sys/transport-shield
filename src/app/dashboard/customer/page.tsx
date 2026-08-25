@@ -10,7 +10,6 @@ import CustomerSidebar from "./components/CustomerSidebar";
 import CustomerDriversGrid from "./components/CustomerDriversGrid";
 import CustomerDriverMonthlyModal from "./components/CustomerDriverMonthlyModal";
 import CustomerDashboardSummary from "./components/CustomerDashboardSummary";
-import CustomerCompanyCard from "./components/CustomerCompanyCard";
 import type { CheckData } from "./types";
 import { LogOut, Menu, Wallet, X } from "lucide-react";
 
@@ -46,7 +45,6 @@ export default function CustomerPage(){
    <main className="mx-auto max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
     <CustomerDashboardSummary drivers={drivers} checks={checks} stats={stats} formatted={formatted}/>
     <section className="mt-6 grid gap-6 xl:grid-cols-[330px_minmax(0,1fr)]"><CustomerSidebar viewDate={viewDate} today={today} monthLabel={monthLabel} selectedDate={selectedDate} transactions={transactions} setViewDate={setViewDate} setSelectedDate={setSelectedDate}/><CustomerDriversGrid drivers={drivers} checks={checks} checksLoading={checksLoading} search={search} formatted={formatted} setSearch={setSearch} onSelectDriver={setSelectedDriver}/></section>
-    <CustomerCompanyCard customerName={customerName} login={currentUser?.login} driversCount={drivers.length}/>
    </main>
    {selectedDriver&&<CustomerDriverMonthlyModal selectedDriver={selectedDriver} selectedDriverChecks={selectedDriverChecks} monthLabel={monthLabel} stats={selectedDriverStats} onClose={()=>setSelectedDriver(null)}/>} 
   </div>;
