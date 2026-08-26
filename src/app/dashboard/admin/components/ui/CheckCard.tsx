@@ -24,116 +24,116 @@ export function CheckCard({ item, onApprove, onReject, onResetStatus, onDelete, 
     switch (status) {
       case "Допущен": return "bg-emerald-50 text-emerald-700 border-emerald-200";
       case "Не допущен": return "bg-rose-50 text-rose-700 border-rose-200";
-      case "Явиться": return "bg-amber-100 text-amber-800 border-amber-300";
-      default: return "bg-amber-50 text-amber-700 border-amber-200";
+      case "Явиться": return "bg-amber-50 text-amber-700 border-amber-200";
+      default: return "bg-slate-50 text-slate-600 border-slate-200";
     }
   };
 
   return (
-    <article className={`overflow-hidden rounded-2xl bg-white p-3.5 shadow-[0_2px_12px_rgba(15,23,42,0.05)] transition-shadow sm:p-5 ${
-      isApproved ? "ring-1 ring-emerald-200" : "ring-1 ring-slate-200/80"
+    <article className={`overflow-hidden rounded-2xl border bg-white shadow-[0_2px_12px_rgba(15,23,42,0.05)] ${
+      isApproved ? "border-emerald-200" : "border-slate-200"
     }`}>
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center rounded-lg bg-slate-50 px-2 py-1 font-mono text-[11px] font-semibold text-slate-700 ring-1 ring-slate-200">
-              №{item.id}
-            </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
-              <Calendar size={12} /> {item.date}
-            </span>
+      <div className="px-3.5 pt-3.5 pb-3 sm:px-5 sm:pt-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <FileText size={16} />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[14px] font-bold leading-5 text-slate-950">Журнал осмотра</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+                  <span>№{item.id}</span>
+                  <span>•</span>
+                  <Calendar size={11} />
+                  <span>{item.date}</span>
+                </div>
+              </div>
+            </div>
           </div>
+          <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold ${getStatusBadge(item.status)}`}>
+            {item.status}
+          </span>
         </div>
-        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold shadow-sm ${getStatusBadge(item.status)}`}>
-          {item.status}
-        </span>
       </div>
 
-      {/* Driver / customer */}
-      <div className="py-3.5">
+      {/* Driver */}
+      <div className="mx-3.5 rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-200/70 sm:mx-5">
         <div className="text-[15px] font-bold leading-5 text-slate-950">{item.driver}</div>
         <button
           type="button"
-          className="mt-1.5 flex max-w-full items-center gap-1.5 text-left text-xs font-medium text-slate-500 transition-colors hover:text-[#042433]"
+          className="mt-1 flex max-w-full items-center gap-1.5 text-left text-[11px] font-medium text-slate-500 transition-colors hover:text-slate-800"
           onClick={() => onCustomerClick?.(item.customer)}
           disabled={!onCustomerClick}
         >
-          <Building2 size={13} className="shrink-0 text-slate-400" />
+          <Building2 size={12} className="shrink-0 text-slate-400" />
           <span className="truncate">{item.customer}</span>
         </button>
       </div>
 
-      {/* Vehicle and documents */}
-      <div className="space-y-2 border-t border-slate-100 py-3.5 text-xs">
-        <div className="flex items-center justify-between gap-2 text-slate-600">
-          <div className="flex min-w-0 items-center gap-2">
-            <FileText size={14} className="shrink-0 text-slate-400" />
-            <span className="truncate">ВУ: <strong className="text-slate-900">{item.documents.license}</strong></span>
-          </div>
-          <span className="shrink-0 text-[10px] text-slate-400">до {item.documents.licenseExpires}</span>
+      {/* Vehicle */}
+      <div className="px-3.5 py-3 sm:px-5">
+        <div className="flex items-center gap-2">
+          <Car size={14} className="shrink-0 text-slate-400" />
+          <span className="font-mono text-xs font-bold text-slate-800">{item.car.number}</span>
+          <span className="text-slate-300">•</span>
+          <span className="truncate text-xs text-slate-600">{item.car.brand}</span>
         </div>
-
-        <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-50 p-2.5 ring-1 ring-slate-200/70">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Car size={13} className="shrink-0 text-slate-400" />
-            <span className="truncate font-mono font-semibold text-slate-800">{item.car.number}</span>
-            <span className="text-slate-300">•</span>
-            <span className="truncate text-slate-600">{item.car.brand}</span>
-          </div>
-          <div className="flex shrink-0 gap-2 text-[10px] text-slate-500">
-            <span>Мед: {item.documents.medical}</span>
-            <span>ТО: {item.documents.inspection}</span>
-          </div>
+        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 pl-5 text-[10px] text-slate-400">
+          <span>ВУ до {item.documents.licenseExpires}</span>
+          <span>Мед. до {item.documents.medical}</span>
+          <span>ТО до {item.documents.inspection}</span>
         </div>
       </div>
 
       {/* Examination results */}
-      <div className="grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
-        <div className="rounded-xl bg-slate-50/70 p-2.5 ring-1 ring-slate-200/70">
-          <div className="flex items-start gap-2">
-            <div className="rounded-lg bg-teal-50 p-1.5 text-teal-700"><Stethoscope size={14} /></div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-semibold text-slate-800">{item.medic}</div>
-              <div className="text-[10px] text-slate-400">{item.medicTime}</div>
+      <div className="border-t border-slate-100 px-3.5 pt-3.5 pb-1 sm:px-5">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">Результаты осмотра</div>
+        <div className="space-y-2">
+          <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-700"><Stethoscope size={15} /></div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-bold text-slate-800">{item.medic}</div>
+                <div className="mt-0.5 text-[10px] text-slate-400">Медицинский осмотр · {item.medicTime}</div>
+              </div>
             </div>
+            {item.medicTime !== "—" && (
+              <div className="mt-2 grid grid-cols-2 gap-1.5">
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-2 text-[10px]">
+                  <span className="text-slate-500">Давление</span>
+                  <strong className="text-slate-900">{hasBloodPressure ? `${item.bloodPressureSystolic}/${item.bloodPressureDiastolic}` : "—"}</strong>
+                </div>
+                <div className="flex items-center justify-between rounded-lg bg-slate-50 px-2.5 py-2 text-[10px]">
+                  <span className="flex items-center gap-1 text-slate-500"><Wine size={11} className="text-rose-500" /> Алк.</span>
+                  <strong className="text-slate-900">{item.alcohol ?? "0.0"}</strong>
+                </div>
+              </div>
+            )}
           </div>
-          {item.medicTime !== "—" && (
-            <div className="mt-2 grid grid-cols-2 gap-1.5 rounded-lg bg-white p-2 text-[10px] ring-1 ring-slate-100">
-              <span className="inline-flex min-w-0 items-center gap-1 text-slate-600">
-                <span className="text-[11px]">🩺</span>
-                <span>Давление</span>
-                <strong className="ml-auto text-slate-900">{hasBloodPressure ? `${item.bloodPressureSystolic}/${item.bloodPressureDiastolic}` : "—"}</strong>
-              </span>
-              <span className="inline-flex min-w-0 items-center gap-1 border-l border-slate-100 pl-2">
-                <Wine size={12} className="shrink-0 text-rose-500" />
-                <span className="text-slate-500">Алк.</span>
-                <strong className="ml-auto text-slate-900">{item.alcohol ?? "0.0"}</strong>
-              </span>
-            </div>
-          )}
-        </div>
 
-        <div className="rounded-xl bg-slate-50/70 p-2.5 ring-1 ring-slate-200/70">
-          <div className="flex items-start gap-2">
-            <div className="rounded-lg bg-amber-50 p-1.5 text-amber-700"><Wrench size={14} /></div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-xs font-semibold text-slate-800">{item.mechanic}</div>
-              <div className="text-[10px] text-slate-400">{item.mechanicTime}</div>
+          <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700"><Wrench size={15} /></div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-xs font-bold text-slate-800">{item.mechanic}</div>
+                <div className="mt-0.5 text-[10px] text-slate-400">Технический осмотр · {item.mechanicTime}</div>
+              </div>
             </div>
+            {item.mechanicTime !== "—" && (
+              <div className="mt-2 rounded-lg bg-slate-50 px-2.5 py-2 text-[10px]">
+                {item.mechanicReasons && item.mechanicReasons.length > 0
+                  ? <span className="font-medium leading-4 text-rose-600">{item.mechanicReasons.join(", ")}</span>
+                  : <span className="font-medium text-emerald-600">Без замечаний</span>}
+              </div>
+            )}
           </div>
-          {item.mechanicTime !== "—" && (
-            <div className="mt-2 rounded-lg bg-white px-2 py-1.5 text-[10px] ring-1 ring-slate-100">
-              {item.mechanicReasons && item.mechanicReasons.length > 0
-                ? <span className="font-medium leading-4 text-rose-600">{item.mechanicReasons.join(", ")}</span>
-                : <span className="font-medium text-emerald-600">Без замечаний</span>}
-            </div>
-          )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="mt-3.5 border-t border-slate-100 pt-3.5">
+      <div className="px-3.5 pt-3.5 pb-3.5 sm:px-5 sm:pb-5">
         {isWaiting ? (
           <div className="grid grid-cols-2 gap-2">
             <button type="button" onClick={() => onApprove(item.docId)} className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-2 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-emerald-700">
