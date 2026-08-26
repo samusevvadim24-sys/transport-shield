@@ -3,7 +3,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Car, ChevronLeft, ChevronRight, History, SquarePen, Plus, Search, Trash2, Upload } from "lucide-react";
+import { Car, ChevronLeft, ChevronRight, History, SquarePen, Plus, Search, Trash2 } from "lucide-react";
 import type { Driver, DriverFormData, CustomerOption } from "@/types/database.types";
 import { createDriver, deleteDriverRecord, DRIVERS_PAGE_SIZE, fetchDriverCustomers, fetchDrivers, updateDriver } from "@/services/drivers-admin.service";
 import DriverModal from "../components/ui/DriverEditModal";
@@ -113,8 +113,6 @@ export default function DriversTab() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><h2 className="text-2xl font-bold text-slate-900">Водители</h2><p className="mt-1 text-sm text-slate-500">Управление штатом водителей, документами и автомобилями</p></div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <input accept=".xlsx,.xls" className="hidden" type="file" />
-            <button type="button" className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition-colors hover:bg-slate-50"><Upload size={18} /> Импорт Excel</button>
             <button type="button" onClick={handleAddDriver} className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-[#042433] px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#031d29]"><Plus size={18} /> Добавить водителя</button>
             <div className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-center text-xs text-slate-500 shadow-sm sm:text-left sm:text-sm">Страница <strong className="text-slate-900">{currentPage}</strong> из <strong className="text-slate-900">{totalPages}</strong> <span className="text-slate-400">({totalRecords})</span></div>
           </div>
