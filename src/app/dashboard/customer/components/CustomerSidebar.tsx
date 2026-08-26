@@ -16,8 +16,10 @@ interface Props {
 }
 
 function getInspectionTitle(transaction: CustomerBalanceTransaction) {
-  const text = `${transaction.type || ""} ${transaction.description || ""}`.toLowerCase();
-  return text.includes("механ") ? "Прохождение механика" : "Прохождение мед. осмотра";
+  const description = `${transaction.description || ""}`.toLowerCase().replace(/ё/g, "е");
+  if (description.includes("мед") && description.includes("осмотр")) return "Прохождение мед. осмотра";
+  if (description.includes("тех") && description.includes("осмотр")) return "Прохождение механика";
+  return null;
 }
 
 export default function CustomerSidebar({ viewDate, today, monthLabel, selectedDate, transactions, checks, setViewDate, setSelectedDate }: Props) {
@@ -27,7 +29,9 @@ export default function CustomerSidebar({ viewDate, today, monthLabel, selectedD
   const inspectionDates = new Set(checks.map(c => c.dateISO));
   const firstDayOffset = (new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay() + 6) % 7;
   const isCurrentMonth = viewDate.getFullYear() === today.getFullYear() && viewDate.getMonth() === today.getMonth();
-  const inspectionHistory = transactions.filter(t => Boolean(t?.inspection_id));
+  const inspectionHistory = transactions
+    .map(transaction => ({ transaction, title: getInspectionTitle(transaction) }))
+    .filter((item): item is { transaction: CustomerBalanceTransaction; title: string } => Boolean(item.title));
 
   return (
     <div className="min-w-0 w-full">
@@ -48,7 +52,7 @@ export default function CustomerSidebar({ viewDate, today, monthLabel, selectedD
       <div className="mt-4 hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:block">
         <div className="flex items-center justify-between gap-3"><div className="min-w-0"><h3 className="text-lg font-bold">История прохождений</h3><p className="mt-1 text-xs text-slate-400">{inspectionHistory.length} прохождений</p></div></div>
         <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto overscroll-contain pr-1">
-          {inspectionHistory.length===0 ? <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-400">Прохождений пока нет</div> : inspectionHistory.map(t => { const driver=t.driver_name||t.driver_id; return <div key={t.id} className="rounded-2xl border border-slate-100 p-3"><div className="flex items-start gap-3"><div className="mt-0.5 shrink-0 rounded-xl bg-[#e8f4f7] p-2 text-[#0b6078]"><History size={16}/></div><div className="min-w-0 flex-1"><div className="text-sm font-bold">{getInspectionTitle(t)}</div>{driver&&<div className="mt-1 truncate text-xs font-medium text-slate-600">Водитель: {driver}</div>}<div className="mt-1 text-[10px] text-slate-400">{new Date(t.created_at).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div></div></div></div>; })}
+          {inspectionHistory.length===0 ? <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-400">Прохождений пока нет</div> : inspectionHistory.map(({ transaction: t, title }) => { const driver=t.driver_name||t.driver_id; return <div key={t.id} className="rounded-2xl border border-slate-100 p-3"><div className="flex items-start gap-3"><div className="mt-0.5 shrink-0 rounded-xl bg-[#e8f4f7] p-2 text-[#0b6078]"><History size={16}/></div><div className="min-w-0 flex-1"><div className="text-sm font-bold">{title}</div>{driver&&<div className="mt-1 truncate text-xs font-medium text-slate-600">Водитель: {driver}</div>}<div className="mt-1 text-[10px] text-slate-400">{new Date(t.created_at).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})}</div></div></div></div>; })}
         </div>
       </div>
     </div>
