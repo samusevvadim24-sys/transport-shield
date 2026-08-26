@@ -61,13 +61,13 @@ export default function CustomerSidebar({ viewDate, today, monthLabel, selectedD
       </div>
 
       <div className="mt-4 hidden rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:block">
-        <div className="flex items-center justify-between gap-3"><div className="min-w-0"><h3 className="text-lg font-bold">История операций</h3></div></div>
+        <div className="flex items-center justify-between gap-3"><div className="min-w-0"><h3 className="text-lg font-bold">История прохождений</h3></div></div>
         <div className="mt-4 max-h-[420px] space-y-2 overflow-y-auto overscroll-contain pr-1">
-          {transactions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-400">Операций пока нет</div> : transactions.map(t => {
+          {transactions.length === 0 ? <div className="rounded-2xl bg-slate-50 p-6 text-center text-sm text-slate-400">Прохождений пока нет</div> : transactions.map(t => {
             const amount = Number(t.amount);
             const positive = Number.isFinite(amount) && amount > 0;
             const driver = t.driver_name || t.driver_id;
-            return <div key={t.id} className="rounded-2xl border border-slate-100 p-3"><div className="flex items-start gap-3"><div className={`mt-0.5 shrink-0 rounded-xl p-2 ${positive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>{positive ? <ArrowDownLeft size={16}/> : <ArrowUpRight size={16}/>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><span className="text-sm font-bold">{positive ? "Пополнение" : "Списание"}</span><span className={`shrink-0 text-sm font-bold ${positive ? "text-emerald-600" : "text-red-600"}`}>{positive ? "+" : ""}{money(t.amount)} BYN</span></div><div className="mt-1 break-words text-xs text-slate-500">{t.description || "Операция по балансу"}</div>{!positive && driver && <div className="mt-1 truncate text-xs font-medium text-slate-600">Водитель: {driver}</div>}<div className="mt-1 text-[10px] text-slate-400">{new Date(t.created_at).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}</div></div></div></div>;
+            return <div key={t.id} className="rounded-2xl border border-slate-100 p-3"><div className="flex items-start gap-3"><div className={`mt-0.5 shrink-0 rounded-xl p-2 ${positive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>{positive ? <ArrowDownLeft size={16}/> : <ArrowUpRight size={16}/>}</div><div className="min-w-0 flex-1"><div className="flex items-start justify-between gap-2"><span className="text-sm font-bold">Прохождение</span></div><div className="mt-1 break-words text-xs text-slate-500">{t.description || "Прохождение осмотра"}</div>{driver && <div className="mt-1 truncate text-xs font-medium text-slate-600">Водитель: {driver}</div>}<div className="mt-1 text-[10px] text-slate-400">{new Date(t.created_at).toLocaleString("ru-RU", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" })}</div></div></div></div>;
           })}
         </div>
       </div>
