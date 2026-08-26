@@ -39,6 +39,13 @@ export interface CustomerBalanceTransaction {
   driver_car_number: string | null;
 }
 
+function transactionCategory(item: any): "medical" | "mechanic" {
+  const text = `${item?.type || ""} ${item?.description || ""}`.toLowerCase();
+  return text.includes("механ") || text.includes("осмотр тс") || text.includes("транспортн")
+    ? "mechanic"
+    : "medical";
+}
+
 export const CustomerDashboardService = {
   async getDrivers(user: any): Promise<CustomerDriver[]> {
     const userId = user.id;
@@ -113,7 +120,18 @@ export const CustomerDashboardService = {
       return [];
     }
 
-    return (data || []).map((item: any) => ({
+    // В одной проверке БД может возвращать несколько одинаковых финансовых
+    // записей. Для кабинета заказчика показываем одно прохождение каждого типа
+    // на одну проверку: медицинское и механика могут существовать одновременно.
+    const unique = new Map<string, any>();
+    for (const item of data || []) {
+      if (item?.inspection_id == null) continue;
+      const category = transactionCategory(item);
+      const key = `${item.inspection_id}:${category}`;
+      if (!unique.has(key)) unique.set(key, item);
+    }
+
+    return Array.from(unique.values()).map((item: any) => ({
       id: item.id,
       customer_id: item.customer_id,
       amount: Number(item.amount || 0),
