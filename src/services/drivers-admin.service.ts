@@ -29,7 +29,14 @@ export async function createDriver(formData: DriverFormData) {
     if (driverError) { console.error("Ошибка при создании записи водителя:", driverError); await supabase.from("users").delete().eq("id", Number(userData.id)); return { data: null, error: driverError }; }
     if (!driverData) { await supabase.from("users").delete().eq("id", Number(userData.id)); return { data: null, error: { message: "Не удалось создать запись водителя." } }; }
     const createdDriverId = Number((driverData as any).id);
-    if (Number.isFinite(createdDriverId)) { const { error: scopeError } = await supabase.from("drivers").update({ inspection_scope: formData.inspection_scope || "both" }).eq("id", createdDriverId); if (scopeError) return { data: null, error: scopeError }; }
+    if (Number.isFinite(createdDriverId)) {
+      const { error: scopeError } = await supabase.from("drivers").update({ inspection_scope: formData.inspection_scope || "both" }).eq("id", createdDriverId);
+      if (scopeError) return { data: null, error: scopeError };
+      if (formData.is_blacklisted !== undefined) {
+        const { error: blacklistError } = await supabase.rpc("set_driver_blacklist", { p_admin_id: Number(session.id), p_driver_id: createdDriverId, p_is_blacklisted: Boolean(formData.is_blacklisted) });
+        if (blacklistError) return { data: null, error: blacklistError };
+      }
+    }
     return { data: driverData, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
@@ -57,6 +64,10 @@ export async function updateDriver(id: string | number, formData: DriverFormData
     });
     if (error) return { data: null, error };
     if (!data) return { data: null, error: { message: "Сервер не вернул обновлённую запись водителя." } };
+    if (formData.is_blacklisted !== undefined) {
+      const { error: blacklistError } = await supabase.rpc("set_driver_blacklist", { p_admin_id: Number(session.id), p_driver_id: Number(id), p_is_blacklisted: Boolean(formData.is_blacklisted) });
+      if (blacklistError) return { data: null, error: blacklistError };
+    }
     return { data, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
