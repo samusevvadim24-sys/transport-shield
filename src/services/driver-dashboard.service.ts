@@ -15,26 +15,24 @@ export interface DriverData {
   customer_id: number;
   user_id?: number;
   customerName?: string;
+  inspection_scope?: 'medical' | 'mechanic' | 'both';
 }
 
+const DRIVER_SELECT = `
+  *,
+  customers (
+    name
+  )
+`;
+
 export const DriverDashboardService = {
-  /**
-   * Получение водителя по логину из сессии (ищет по driver_id или по user_id)
-   */
   async getDriverByNumber(userLogin: string): Promise<DriverData | null> {
-    // 1. Ищем напрямую по полю drivers.driver_id
     let { data, error } = await supabase
       .from('drivers')
-      .select(`
-        *,
-        customers (
-          name
-        )
-      `)
+      .select(DRIVER_SELECT)
       .eq('driver_id', userLogin)
       .maybeSingle();
 
-    // 2. Если не нашли по driver_id, ищем id пользователя в таблице users по его логину
     if (!data) {
       const { data: userData } = await supabase
         .from('users')
@@ -43,19 +41,13 @@ export const DriverDashboardService = {
         .maybeSingle();
 
       if (userData?.id) {
-        const { data: driverByUserId, error: driverErr } = await supabase
+        const result = await supabase
           .from('drivers')
-          .select(`
-            *,
-            customers (
-              name
-            )
-          `)
+          .select(DRIVER_SELECT)
           .eq('user_id', userData.id)
           .maybeSingle();
-
-        data = driverByUserId;
-        error = driverErr;
+        data = result.data;
+        error = result.error;
       }
     }
 
@@ -69,29 +61,61 @@ export const DriverDashboardService = {
       return null;
     }
 
-    // Маппим customerName из связи с таблицей customers
     return {
       ...data,
       customerName: (data.customers as any)?.name || 'Не указана',
+      inspection_scope: data.inspection_scope || 'both',
     };
   },
 
-  /**
-   * Подписка на осмотры водителя в режиме Realtime
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  subscribeToChecks(driverDbId: number, onUpdate: (inspections: any[]) => void) {
-    // Первоначальная загрузка
-    supabase
-      .from('inspections')
-      .select('*')
-      .eq('driver_id', driverDbId)
-      .order('requested_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) onUpdate(data);
-      });
+  async subscribeToDriver(
+    driverDbId: number,
+    userLogin: string,
+    onUpdate: (driver: DriverData | null) => void
+  ) {
+    const refresh = async () => {
+      const driver = await this.getDriverByNumber(userLogin);
+      onUpdate(driver);
+    };
 
-    // Realtime подписка
+    await refresh();
+
+    const channel = supabase
+      .channel(`driver-data-${driverDbId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'drivers',
+          filter: `id=eq.${driverDbId}`,
+        },
+        refresh
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  },
+
+  async subscribeToChecks(driverDbId: number, onUpdate: (inspections: any[]) => void) {
+    const refresh = async () => {
+      const { data, error } = await supabase
+        .from('inspections')
+        .select('*')
+        .eq('driver_id', driverDbId)
+        .order('requested_at', { ascending: false });
+
+      if (error) {
+        console.error('Ошибка обновления осмотров:', error.message);
+        return;
+      }
+      onUpdate(data || []);
+    };
+
+    await refresh();
+
     const channel = supabase
       .channel(`driver-inspections-${driverDbId}`)
       .on(
@@ -102,48 +126,57 @@ export const DriverDashboardService = {
           table: 'inspections',
           filter: `driver_id=eq.${driverDbId}`,
         },
-        async () => {
-          const { data } = await supabase
-            .from('inspections')
-            .select('*')
-            .eq('driver_id', driverDbId)
-            .order('requested_at', { ascending: false });
-          if (data) onUpdate(data);
-        }
+        refresh
       )
       .subscribe();
 
+    // Fallback на случай потери realtime-события/переподключения.
+    const interval = setInterval(refresh, 30000);
+
     return () => {
+      clearInterval(interval);
       supabase.removeChannel(channel);
     };
   },
 
-  /**
-   * Подтверждение вызова на осмотр
-   */
   async acknowledgeSummon(inspectionId: number) {
     const { error } = await supabase
       .from('inspections')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .update({ summon_acknowledged: true } as any)
       .eq('id', inspectionId);
 
     if (error) {
       console.error('Ошибка подтверждения вызова:', error.message);
+      throw new Error(error.message);
     }
   },
 
-  /**
-   * Создание нового запроса на осмотр в таблице inspections
-   */
   async createInspection(driverDbId: number) {
-    const newInspection = {
+    const { data: driver, error: driverError } = await supabase
+      .from('drivers')
+      .select('inspection_scope')
+      .eq('id', driverDbId)
+      .single();
+
+    if (driverError) {
+      console.error('Ошибка получения типа осмотра:', driverError.message);
+      throw new Error(driverError.message);
+    }
+
+    const scope = driver?.inspection_scope || 'both';
+    const newInspection: Record<string, any> = {
       driver_id: driverDbId,
       requested_at: new Date().toISOString(),
       overall_status: 'Ожидание',
-      medical_status: 'Ожидание',
-      mechanic_status: 'Ожидание',
     };
+
+    if (scope === 'medical' || scope === 'both') {
+      newInspection.medical_status = 'Ожидание';
+    }
+
+    if (scope === 'mechanic' || scope === 'both') {
+      newInspection.mechanic_status = 'Ожидание';
+    }
 
     const { error } = await supabase.from('inspections').insert([newInspection]);
 
@@ -151,5 +184,5 @@ export const DriverDashboardService = {
       console.error('Ошибка создания запроса на осмотр:', error.message);
       throw new Error(error.message);
     }
-  }
+  },
 };
