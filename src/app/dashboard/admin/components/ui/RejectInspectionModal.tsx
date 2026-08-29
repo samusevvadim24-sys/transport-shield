@@ -30,7 +30,9 @@ export default function RejectInspectionModal({ isOpen, inspection, rawAlcoholDi
 
   if (!isOpen || !inspection) return null;
 
-  const scope = inspection.inspection_scope ?? "both";
+  // formatInspectionItem exposes the scope as inspectionScope.
+  // Fall back to inspection_scope for compatibility with any raw Inspection objects.
+  const scope = (inspection as any).inspectionScope ?? (inspection as any).inspection_scope ?? "both";
   const showMedical = scope === "medical" || scope === "both";
   const showMechanic = scope === "mechanic" || scope === "both";
 
