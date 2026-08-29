@@ -40,6 +40,21 @@ const STATUS_STYLES: Record<string, string> = {
   Отстранен: "bg-[#C53030]/10 text-[#C53030] border-[#C53030]/20",
 };
 
+const getDisplayStatus = (status?: string) => {
+  switch (status) {
+    case "Допущен":
+      return "Подтверждено";
+    case "Не допущен":
+      return "Отклонено";
+    case "Явиться":
+      return "Необходимо явиться на пункт предрейсового осмотра";
+    case "Ожидание":
+      return "Ожидание";
+    default:
+      return status || "Ожидание";
+  }
+};
+
 export default function DriverPage() {
   const router = useRouter();
 
@@ -145,7 +160,6 @@ export default function DriverPage() {
       : new Date(check.requested_at || check.created_at).getTime();
   };
 
-  // Загрузка данных водителя
   useEffect(() => {
     const session = AuthService.getSession();
     const userLogin = session?.login;
@@ -168,7 +182,6 @@ export default function DriverPage() {
     });
   }, []);
 
-  // Realtime подписка на осмотры
   useEffect(() => {
     if (!driver) return;
 
@@ -197,7 +210,6 @@ export default function DriverPage() {
             latest = data;
           }
 
-          // Проверяем вызов, если поле summon добавлено в БД
           if (data.summon === true && !data.summon_acknowledged) {
             activeSummon = data;
           }
@@ -219,7 +231,6 @@ export default function DriverPage() {
     return () => unsubscribe();
   }, [driver, selectedDate]);
 
-  // Расчет таймера кулдауна
   useEffect(() => {
     if (!latestCheck) {
       setTimeRemaining(0);
@@ -235,7 +246,7 @@ export default function DriverPage() {
       const completionTime = getCompletionTime(latestCheck);
       const now = Date.now();
       const diff = now - completionTime;
-      const cooldown = 12 * 60 * 60 * 1000; // 12 часов
+      const cooldown = 12 * 60 * 60 * 1000;
 
       if (diff < cooldown && diff >= 0) {
         setTimeRemaining(cooldown - diff);
@@ -458,7 +469,7 @@ export default function DriverPage() {
                 "border-slate-200 bg-slate-50 text-slate-600"
               }`}
             >
-              {latestCheck.overall_status || "Ожидание"}
+              {getDisplayStatus(latestCheck.overall_status)}
             </span>
           )}
         </div>
@@ -516,7 +527,7 @@ export default function DriverPage() {
             "border-slate-200 bg-slate-50 text-slate-600"
           }`}
         >
-          {check.overall_status || "Ожидание"}
+          {getDisplayStatus(check.overall_status)}
         </span>
       </div>
 
@@ -869,10 +880,7 @@ export default function DriverPage() {
           </div>
 
           <div className="space-y-4 md:col-span-2">
-            {/* Отрисовка календаря (находится сверху согласно дизайну) */}
             {renderCalendar()}
-
-            {/* Блок действий с кнопкой (находится прямо под календарем) */}
             {isSelectedToday && renderActionBlock()}
 
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
