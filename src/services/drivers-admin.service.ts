@@ -36,8 +36,28 @@ export async function createDriver(formData: DriverFormData) {
 
 export async function updateDriver(id: string | number, formData: DriverFormData, userId?: number | null) {
   try {
-    if (userId) { const userUpdates: Record<string, any> = { login: formData.login }; if (formData.password?.trim()) userUpdates.password = formData.password; const { error: userError } = await supabase.from("users").update(userUpdates).eq("id", userId); if (userError) return { data: null, error: userError }; }
-    const { data, error } = await supabase.from("drivers").update({ name: formData.name, car_brand: formData.car_brand, car_number: formData.car_number, customer_id: Number(formData.customer_id), driver_id: formData.driver_id || null, insurance_expiry: toDateValue(formData.insurance_expiry), license_expiry: toDateValue(formData.license_expiry), license_number: formData.license_number || null, medical_expiry: toDateValue(formData.medical_expiry), tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry), inspection_scope: formData.inspection_scope || "both" }).eq("id", id).select().maybeSingle(); if (error) return { data: null, error }; return { data, error: null };
+    const session = AuthService.getSession();
+    if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+    const { data, error } = await supabase.rpc("update_driver_record", {
+      p_admin_id: Number(session.id),
+      p_driver_id: Number(id),
+      p_name: String(formData.name ?? "").trim(),
+      p_car_brand: String(formData.car_brand ?? "").trim(),
+      p_car_number: String(formData.car_number ?? "").trim(),
+      p_customer_id: Number(formData.customer_id),
+      p_driver_code: String(formData.driver_id ?? "").trim(),
+      p_insurance_expiry: toDateValue(formData.insurance_expiry),
+      p_license_expiry: toDateValue(formData.license_expiry),
+      p_license_number: String(formData.license_number ?? "").trim(),
+      p_medical_expiry: toDateValue(formData.medical_expiry),
+      p_tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry),
+      p_inspection_scope: formData.inspection_scope || "both",
+      p_login: String(formData.login ?? formData.driver_id ?? "").trim(),
+      p_password: formData.password?.trim() || null,
+    });
+    if (error) return { data: null, error };
+    if (!data) return { data: null, error: { message: "Сервер не вернул обновлённую запись водителя." } };
+    return { data, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
 export async function deleteDriverRecord(id: string | number, _userId?: number | null) { try { const session = AuthService.getSession(); if (!session || session.role !== "admin") return { error: { message: "Недостаточно прав для удаления водителя. Войдите как администратор." } }; const { error } = await supabase.rpc("delete_driver_record", { p_admin_id: Number(session.id), p_driver_id: Number(id) }); if (error) return { error }; return { error: null }; } catch (err) { return { error: { message: toError(err).message } }; } }
