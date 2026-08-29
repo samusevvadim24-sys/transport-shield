@@ -108,8 +108,8 @@ export default function DriversTab() {
   })();
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 pb-24 md:p-6 md:pb-6">
-      <div className="mx-auto max-w-7xl"><div className="w-full space-y-6">
+    <div className="w-full">
+      <div className="w-full space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div><h2 className="text-2xl font-bold text-slate-900">Водители</h2><p className="mt-1 text-sm text-slate-500">Управление штатом водителей, документами и автомобилями</p></div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -149,7 +149,7 @@ export default function DriversTab() {
           ))}
         </div>
         {totalPages > 1 && <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-slate-200 px-2 pt-4 sm:flex-row"><button type="button" disabled={currentPage === 1 || loading} onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:text-sm"><ChevronLeft size={16} /> Назад</button><div className="flex max-w-full items-center gap-1 overflow-x-auto px-1">{pages.map((page, index) => page === "..." ? <span key={`separator-${index}`} className="px-1 text-xs text-slate-400">...</span> : <button key={page} type="button" onClick={() => setCurrentPage(page as number)} className={`h-8 w-8 shrink-0 cursor-pointer rounded-xl text-xs font-medium transition-colors sm:h-9 sm:w-9 sm:text-sm ${currentPage === page ? "bg-[#042433] text-white shadow-sm" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"}`}>{page}</button>)}</div><button type="button" disabled={currentPage === totalPages || loading} onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))} className="flex w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto sm:text-sm">Вперед <ChevronRight size={16} /></button></div>}
-      </div></div>
+      </div>
       <DriverModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setEditingDriver(null); }} driver={editingDriver} customers={customers} onSave={handleSaveDriver} />
       <DeleteDriverModal isOpen={isDeleteModalOpen} driver={deletingDriver} loading={deleteLoading} errorMessage={deleteError} onClose={handleCloseDeleteModal} onConfirm={handleDeleteConfirm} />
       <DriverHistoryModal isOpen={isHistoryModalOpen} driver={historyDriver} onClose={() => { setIsHistoryModalOpen(false); setHistoryDriver(null); }} />
