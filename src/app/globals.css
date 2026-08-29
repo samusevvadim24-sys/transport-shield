@@ -86,6 +86,63 @@ button:disabled {
   }
 }
 
+/*
+ * Карточка добавления/редактирования водителя.
+ * На десктопе поля раскладываем плотнее в три колонки, чтобы вся форма
+ * помещалась по высоте без внутреннего вертикального скролла.
+ * На мобильных правила выше сохраняют обычную прокрутку bottom-sheet.
+ */
+@media (min-width: 768px) {
+  #driver-form {
+    overflow-y: visible !important;
+    overflow-x: visible !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  #driver-form > div:first-child {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    column-gap: 0.75rem !important;
+    row-gap: 0.55rem !important;
+  }
+
+  #driver-form > div:first-child > .lg\:col-span-2 {
+    grid-column: span 3 / span 3 !important;
+  }
+
+  /* В первой строке номер занимает одну колонку, заказчик — две. */
+  #driver-form > div:first-child > div:nth-child(2) {
+    grid-column: span 2 / span 2 !important;
+  }
+
+  /* Документы и данные автомобиля распределяются по трём колонкам. */
+  #driver-form > div:first-child > div:nth-child(n+6):not(.lg\:col-span-2) {
+    min-width: 0;
+  }
+
+  #driver-form label {
+    margin-bottom: 0.25rem !important;
+  }
+
+  #driver-form input {
+    padding-top: 0.55rem !important;
+    padding-bottom: 0.55rem !important;
+  }
+
+  #driver-form p {
+    margin-top: 0.2rem !important;
+  }
+
+  /* Сама модалка чуть шире и не занимает лишнюю высоту. */
+  #driver-form {
+    max-width: none;
+  }
+
+  #driver-form:has(+ div) {
+    scrollbar-width: none;
+  }
+}
+
 @supports (height: 100dvh) {
   @media (max-width: 767px) {
     [class*="fixed"][class*="inset-0"] > div {
