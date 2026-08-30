@@ -1,9 +1,19 @@
 export type UserRole = 'admin' | 'customer' | 'driver';
 export type InspectionScope = 'medical' | 'mechanic' | 'both';
 
-export interface User { id: number; login: string; role: UserRole; }
-export interface UserSession { id: number; login: string; role: UserRole; }
+export interface User { id: number; login: string; role: UserRole; inspection_point_id?: number | null; }
+export interface UserSession { id: number; login: string; role: UserRole; inspection_point_id?: number | null; }
 export interface CustomerOption { id: number; name: string; number?: string | null; }
+
+export interface InspectionPoint {
+  id: number;
+  name: string;
+  address: string;
+  medic_last_name: string;
+  mechanic_last_name: string;
+  medical_inspection_price: number;
+  mechanic_inspection_price: number;
+}
 
 export interface DriverFormData {
   name: string; car_brand: string; car_number: string; customer_id: string | number;
@@ -17,7 +27,7 @@ export interface Driver {
   id: number; car_brand: string; car_number: string | null; customer_id: number; user_id: number | null;
   driver_id: string | null; name: string | null; insurance_expiry: string | null; license_expiry: string | null;
   license_number: string | null; medical_expiry: string | null; tech_inspection_expiry: string | null;
-  inspection_scope: InspectionScope; is_blacklisted: boolean;
+  inspection_scope: InspectionScope; is_blacklisted: boolean; inspection_point_id?: number | null;
   customer?: { id: number; name: string; number?: string | null } | null;
   user?: { id: number; login: string; role: string } | null;
 }
@@ -41,6 +51,7 @@ export interface DatabaseInspection {
   blood_pressure_diastolic: number | null; drug_intoxication: boolean; mechanic_status: string | null;
   mechanic_date: string | null; mechanic_issues: string[] | null; overall_status: string | null; completed_at: string | null;
   medical_examiner_id: number | null; mechanic_examiner_id: number | null; inspection_scope: InspectionScope;
+  inspection_point_id?: number | null;
 }
 export interface Inspection {
   docId: string; id: number; driver: string; customer: string; date: string; dateISO?: string; status: InspectionStatus;
@@ -49,4 +60,5 @@ export interface Inspection {
   medicStatus: string; mechanicStatus: string; inspectionScope: InspectionScope; isBlacklisted?: boolean;
   alcohol?: number | null; bloodPressureSystolic?: number | null; bloodPressureDiastolic?: number | null;
   drugIntoxication?: boolean; mechanicReasons?: string[]; medicalExaminerId?: number | null; mechanicExaminerId?: number | null;
+  inspectionPointId?: number | null;
 }
