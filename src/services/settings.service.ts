@@ -81,7 +81,7 @@ export async function fetchAdminInspectionPointId() {
   return Number.isFinite(pointId) && pointId > 0 ? pointId : null;
 }
 
-/** Used only by administrator-management code, never by the settings selector. */
+/** Used by administrator-management code to assign a point to the current administrator. */
 export async function updateAdminInspectionPoint(pointId: number) {
   const id = currentAdminId();
   if (!id) return { error: new Error("Сессия администратора не найдена") };
@@ -151,15 +151,36 @@ export async function updateInspectionPointSettings(
     mechanic_exam_price: number;
   }
 ) {
-  const payload: Record<string, unknown> = {
+  if (!Number.isFinite(pointId) || pointId <= 0) {
+    return { data: null, error: new Error("Некорректный пункт осмотра") };
+  }
+
+  const payload = {
+    ...(values.name?.trim() ? { name: values.name.trim() } : {}),
     address: values.address.trim(),
     medic_surname: values.medic_surname.trim(),
     mechanic_surname: values.mechanic_surname.trim(),
-    medical_exam_price: Number(values.medical_exam_price) || 0,
-    mechanic_exam_price: Number(values.mechanic_exam_price) || 0,
+    medical_exam_price: Math.max(0, Number(values.medical_exam_price) || 0),
+    mechanic_exam_price: Math.max(0, Number(values.mechanic_exam_price) || 0),
+    updated_at: new Date().toISOString(),
   };
-  if (values.name?.trim()) payload.name = values.name.trim();
-  return supabase.from("inspection_points").update(payload).eq("id", pointId);
+
+  const { data, error } = await supabase
+    .from("inspection_points")
+    .update(payload)
+    .eq("id", pointId)
+    .select("id,name,address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price")
+    .maybeSingle();
+
+  if (error) return { data: null, error };
+  if (!data) {
+    return {
+      data: null,
+      error: new Error("Настройки пункта не сохранены. Проверьте RLS/права UPDATE для inspection_points."),
+    };
+  }
+
+  return { data, error: null };
 }
 
 export async function updateSystemSettings(values: Pick<SystemSettings, "organization_name" | "organization_address" | "organization_bank_account" | "organization_unp" | "organization_phone" | "organization_email" | "organization_director_name">) {
