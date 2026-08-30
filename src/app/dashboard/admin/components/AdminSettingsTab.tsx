@@ -43,6 +43,14 @@ export default function AdminSettingsTab(){
       updateSystemSettings({organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,organization_director_name})
     ]);
     const error=pointResult.error||orgResult.error;
+    if (!error) {
+      window.dispatchEvent(new CustomEvent("transport-shield:inspection-point-updated", {
+        detail: {
+          name: inspection_point_name.trim(),
+          address: inspection_point_address.trim(),
+        },
+      }));
+    }
     setMsg(error?error.message:"Настройки сохранены");
     setSaving(false);
   };
