@@ -24,17 +24,36 @@ const emitAuthChange = () => {
 };
 
 /**
- * Хеширует пароль с использованием bcryptjs
+ * Хеширует пароль через API (работает на сервере)
  * @param password - исходный пароль
  * @returns хешированный пароль
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = await bcryptjs.genSalt(10);
-  return bcryptjs.hash(password, salt);
+  try {
+    const response = await fetch('/api/auth/hash-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to hash password');
+    }
+
+    const { hashedPassword } = await response.json();
+    return hashedPassword;
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    throw error;
+  }
 }
 
 /**
  * Проверяет соответствие пароля с его хешем
+ * На сервере используется bcryptjs.compare
  * @param password - исходный пароль
  * @param passwordHash - хеш пароля из БД
  * @returns true если пароли совпадают
