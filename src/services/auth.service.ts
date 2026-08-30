@@ -1,4 +1,3 @@
-import bcryptjs from 'bcryptjs';
 import { supabase } from '@/lib/supabase';
 import { User, UserSession } from '@/types/database.types';
 
@@ -24,52 +23,38 @@ const emitAuthChange = () => {
 };
 
 /**
- * Хеширует пароль через API (работает на сервере)
- * @param password - исходный пароль
- * @returns хешированный пароль
+ * Хеширует пароль на сервере.
+ * Пароль никогда не хешируется bcrypt в браузере перед сохранением.
  */
 export async function hashPassword(password: string): Promise<string> {
+  const cleanPassword = String(password ?? '');
+  if (!cleanPassword.trim()) throw new Error('Пароль не может быть пустым');
+
+  const response = await fetch('/api/auth/hash-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: cleanPassword }),
+  });
+
+  let payload: { hashedPassword?: string; error?: string } = {};
   try {
-    const response = await fetch('/api/auth/hash-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to hash password');
-    }
-
-    const { hashedPassword } = await response.json();
-    return hashedPassword;
-  } catch (error) {
-    console.error('Error hashing password:', error);
-    throw error;
-  }
-}
-
-/**
- * Проверяет соответствие пароля с его хешем
- * На сервере используется bcryptjs.compare
- * @param password - исходный пароль
- * @param passwordHash - хеш пароля из БД
- * @returns true если пароли совпадают
- */
-export async function verifyPassword(password: string, passwordHash: string): Promise<boolean> {
-  try {
-    return await bcryptjs.compare(password, passwordHash);
+    payload = await response.json();
   } catch {
-    return false;
+    throw new Error('Не удалось получить ответ сервера');
   }
+
+  if (!response.ok || !payload.hashedPassword) {
+    throw new Error(payload.error || 'Не удалось хешировать пароль');
+  }
+
+  return payload.hashedPassword;
 }
 
 export const AuthService = {
   /**
-   * Авторизация строго по таблице users (полю login).
-   * Сессия хранится в localStorage и переживает перезапуск браузера.
+   * Авторизация выполняется на сервере: bcrypt-хеш не возвращается браузеру.
+   * Старые plaintext-пароли поддерживаются только для миграции: после
+   * успешного входа сервер заменяет их на bcrypt-хеш.
    */
   async login(loginStr: string, passwordStr: string): Promise<UserSession> {
     const cleanLogin = loginStr.trim();
@@ -79,29 +64,29 @@ export const AuthService = {
       throw new Error('Логин и пароль обязательны');
     }
 
-    const { data: user, error } = await supabase
-      .from('users')
-      .select('id, login, password, role')
-      .eq('login', cleanLogin)
-      .maybeSingle();
+    const response = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ login: cleanLogin, password: cleanPassword }),
+    });
 
-    if (error) {
-      console.error('Ошибка Supabase при авторизации:', error.message);
-      throw new Error('Ошибка соединения с базой данных');
+    let payload: { session?: UserSession; error?: string } = {};
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error('Не удалось получить ответ сервера');
     }
 
-    if (!user) throw new Error('Пользователь с таким логином не найден');
+    if (!response.ok || !payload.session) {
+      throw new Error(payload.error || 'Не удалось выполнить вход');
+    }
 
-    // Проверка пароля с использованием bcryptjs
-    const isPasswordValid = await verifyPassword(cleanPassword, user.password);
-    if (!isPasswordValid) throw new Error('Неверный пароль');
-
-    const role = user.role as User['role'];
+    const role = payload.session.role as User['role'];
     if (!getDashboardPath(role)) throw new Error('Для пользователя не настроена роль');
 
     const session: UserSession = {
-      id: user.id,
-      login: user.login,
+      id: payload.session.id,
+      login: payload.session.login,
       role,
     };
 
@@ -125,13 +110,11 @@ export const AuthService = {
           return session;
         }
       } catch {
-        // Повреждённая canonical-сессия будет заменена ниже или удалена.
+        // Повреждённая canonical-сессия будет удалена ниже.
       }
       localStorage.removeItem(SESSION_KEY);
     }
 
-    // Однократно поддерживаем старый ключ, чтобы уже авторизованные
-    // пользователи не были принудительно разлогинены после обновления.
     const legacy = localStorage.getItem(LEGACY_SESSION_KEY);
     if (!legacy) return null;
 
@@ -143,7 +126,7 @@ export const AuthService = {
         return session;
       }
     } catch {
-      // Игнорируем повреждённые данные ниже.
+      // Игнорируем повреждённые данные.
     }
 
     localStorage.removeItem(LEGACY_SESSION_KEY);
