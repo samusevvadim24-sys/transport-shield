@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ошибка соединения с базой данных' }, { status: 500 });
     }
 
-    // Одинаковое сообщение для отсутствующего пользователя и неверного пароля.
     if (!user) {
       return NextResponse.json({ error: 'Неверный логин или пароль' }, { status: 401 });
     }
@@ -53,7 +52,7 @@ export async function POST(request: NextRequest) {
       // После успешной проверки сразу заменяем пароль на bcrypt-хеш.
       valid = storedPassword === password;
       if (valid) {
-        const newHash = await bcryptjs.hash(password, 12);
+        const newHash = await bcryptjs.hash(password, 10);
         const { error: updateError } = await supabase
           .from('users')
           .update({ password: newHash })
