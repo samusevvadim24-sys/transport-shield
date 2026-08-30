@@ -39,41 +39,28 @@ export const DriverDashboardService = {
     return { ...data, customerName: (data.customers as any)?.name || 'Не указана', inspection_scope: data.inspection_scope || 'both' };
   },
 
-  subscribeToDriver(driverDbId: number, userLogin: string, onUpdate: (driver: DriverData | null) => void) {
+  subscribeToDriver(userLogin: string, onUpdate: (driver: DriverData | null) => void) {
     let active = true;
     let refreshInFlight = false;
     let refreshQueued = false;
-
     const refresh = async () => {
       if (!active) return;
-      if (refreshInFlight) {
-        refreshQueued = true;
-        return;
-      }
+      if (refreshInFlight) { refreshQueued = true; return; }
       refreshInFlight = true;
       try {
         const driver = await this.getDriverByNumber(userLogin);
         if (active) onUpdate(driver);
       } finally {
         refreshInFlight = false;
-        if (active && refreshQueued) {
-          refreshQueued = false;
-          void refresh();
-        }
+        if (active && refreshQueued) { refreshQueued = false; void refresh(); }
       }
     };
-
     void refresh();
-    const channel = supabase.channel(`driver-data-${driverDbId}-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers', filter: `id=eq.${driverDbId}` }, () => void refresh())
+    const channel = supabase.channel(`driver-data-${userLogin}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, () => void refresh())
       .subscribe();
-
     const interval = window.setInterval(() => void refresh(), 30000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-      void supabase.removeChannel(channel);
-    };
+    return () => { active = false; window.clearInterval(interval); void supabase.removeChannel(channel); };
   },
 
   subscribeToChecks(driverDbId: number, onUpdate: (inspections: any[]) => void) {
@@ -81,64 +68,48 @@ export const DriverDashboardService = {
     let requestId = 0;
     let refreshInFlight = false;
     let refreshQueued = false;
-
     const refresh = async () => {
       if (!active) return;
-      if (refreshInFlight) {
-        refreshQueued = true;
-        return;
-      }
+      if (refreshInFlight) { refreshQueued = true; return; }
       refreshInFlight = true;
       const currentRequest = ++requestId;
       try {
         const { data, error } = await supabase.from('inspections').select('*').eq('driver_id', driverDbId).order('requested_at', { ascending: false });
-        if (!error && active && currentRequest === requestId) onUpdate(data || []);
         if (error) console.error('Ошибка обновления осмотров:', error.message);
+        else if (active && currentRequest === requestId) onUpdate(data || []);
       } finally {
         refreshInFlight = false;
-        if (active && refreshQueued) {
-          refreshQueued = false;
-          void refresh();
-        }
+        if (active && refreshQueued) { refreshQueued = false; void refresh(); }
       }
     };
-
     void refresh();
     const channel = supabase.channel(`driver-inspections-${driverDbId}-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'inspections', filter: `driver_id=eq.${driverDbId}` }, () => void refresh())
       .subscribe();
     const interval = window.setInterval(() => void refresh(), 30000);
-
-    return () => {
-      active = false;
-      requestId++;
-      window.clearInterval(interval);
-      void supabase.removeChannel(channel);
-    };
+    return () => { active = false; requestId++; window.clearInterval(interval); void supabase.removeChannel(channel); };
   },
 
   subscribeToSettings(onUpdate: (settings: any) => void) {
     let active = true;
+    let refreshInFlight = false;
     const refresh = async () => {
-      if (!active) return;
+      if (!active || refreshInFlight) return;
+      refreshInFlight = true;
       try {
         const { fetchSystemSettings } = await import('@/services/settings.service');
         const settings = await fetchSystemSettings();
         if (active) onUpdate(settings);
       } catch (error) {
         console.error('Ошибка обновления настроек:', error);
-      }
+      } finally { refreshInFlight = false; }
     };
     void refresh();
     const channel = supabase.channel(`driver-system-settings-${Date.now()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings', filter: 'id=eq.1' }, () => void refresh())
       .subscribe();
     const interval = window.setInterval(() => void refresh(), 30000);
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-      void supabase.removeChannel(channel);
-    };
+    return () => { active = false; window.clearInterval(interval); void supabase.removeChannel(channel); };
   },
 
   async acknowledgeSummon(inspectionId: number) {
