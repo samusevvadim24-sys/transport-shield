@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Building2, KeyRound, LockKeyhole, MapPin, Save, ShieldCheck } from "lucide-react";
+import { Building2, KeyRound, LockKeyhole, MapPin, Save } from "lucide-react";
 import { fetchAdminInspectionPointId, fetchSystemSettings, updateInspectionPointSettings, updateAdminPassword, updateSystemSettings, SystemSettings } from "../../../../services/settings.service";
 
 const EMPTY:SystemSettings={id:1,inspection_point_id:null,inspection_point_name:"",inspection_point_address:"",medic_surname:"",mechanic_surname:"",medical_exam_price:0.9,mechanic_exam_price:0.9,organization_name:"",organization_address:"",organization_bank_account:"",organization_unp:"",organization_phone:"",organization_email:"",organization_director_name:""};
@@ -44,12 +44,7 @@ export default function AdminSettingsTab(){
     ]);
     const error=pointResult.error||orgResult.error;
     if (!error) {
-      window.dispatchEvent(new CustomEvent("transport-shield:inspection-point-updated", {
-        detail: {
-          name: inspection_point_name.trim(),
-          address: inspection_point_address.trim(),
-        },
-      }));
+      window.dispatchEvent(new CustomEvent("transport-shield:inspection-point-updated", { detail: { name: inspection_point_name.trim(), address: inspection_point_address.trim() } }));
     }
     setMsg(error?error.message:"Настройки сохранены");
     setSaving(false);
@@ -71,39 +66,36 @@ export default function AdminSettingsTab(){
 
   return <section className="space-y-7 pb-8">
     <header>
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400"><ShieldCheck size={15}/>Администрирование</div>
-      <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Настройки</h1>
+      <h1 className="text-2xl font-bold tracking-tight text-slate-900">Настройки</h1>
       <p className="mt-1 max-w-2xl text-sm text-slate-500">Настройки пункта осмотра, закреплённого за текущим аккаунтом администратора, и общие реквизиты организации.</p>
     </header>
 
-    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
-      <SectionHeader icon={<MapPin size={19}/>} title="Пункт осмотра" description="Пункт определяется аккаунтом администратора. Здесь нельзя переключиться на другой пункт."/>
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Field label="Пункт, закреплённый за аккаунтом">
-          <input className={inputClass} value={pointId ? `${v.inspection_point_name || `Пункт №${pointId}`} (ID ${pointId})` : "Пункт не назначен"} readOnly disabled />
-        </Field>
-        <Field label="Название пункта">
-          <input className={inputClass} value={v.inspection_point_name} onChange={e=>set("inspection_point_name",e.target.value)} placeholder="Пункт №1"/>
-        </Field>
-        <Field label="Адрес пункта" className="sm:col-span-2">
-          <input className={inputClass} value={v.inspection_point_address} onChange={e=>set("inspection_point_address",e.target.value)} placeholder="Адрес пункта предрейсового осмотра"/>
-        </Field>
-        <Field label="Фамилия медика"><input className={inputClass} value={v.medic_surname} onChange={e=>set("medic_surname",e.target.value)} placeholder="Фамилия"/></Field>
-        <Field label="Фамилия механика"><input className={inputClass} value={v.mechanic_surname} onChange={e=>set("mechanic_surname",e.target.value)} placeholder="Фамилия"/></Field>
-        <Field label="Стоимость медосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.medical_exam_price} onChange={e=>set("medical_exam_price",Number(e.target.value))}/></Field>
-        <Field label="Стоимость мехосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.mechanic_exam_price} onChange={e=>set("mechanic_exam_price",Number(e.target.value))}/></Field>
-      </div>
-    </section>
+    <div className="grid gap-7 lg:grid-cols-2 lg:items-start">
+      <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
+        <SectionHeader icon={<LockKeyhole size={19}/>} title="Пароль администратора" description="Изменение пароля текущей учётной записи администратора."/>
+        <div className="mt-6 space-y-4">
+          <Field label="Текущий пароль"><input className={inputClass} type="password" value={pw.current} onChange={e=>setPw(x=>({...x,current:e.target.value}))} placeholder="Введите текущий пароль"/></Field>
+          <Field label="Новый пароль"><input className={inputClass} type="password" value={pw.next} onChange={e=>setPw(x=>({...x,next:e.target.value}))} placeholder="Введите новый пароль"/></Field>
+          <Field label="Повторите новый пароль"><input className={inputClass} type="password" value={pw.repeat} onChange={e=>setPw(x=>({...x,repeat:e.target.value}))} placeholder="Повторите новый пароль"/></Field>
+          <div className="flex items-center justify-between gap-3"><span className="text-xs text-red-500">{pmsg}</span><button type="button" onClick={change} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b]"><KeyRound size={16}/>Изменить пароль</button></div>
+        </div>
+      </section>
 
-    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
-      <SectionHeader icon={<LockKeyhole size={19}/>} title="Пароль администратора" description="Изменение пароля текущей учётной записи администратора."/>
-      <div className="mt-6 space-y-4">
-        <Field label="Текущий пароль"><input className={inputClass} type="password" value={pw.current} onChange={e=>setPw(x=>({...x,current:e.target.value}))} placeholder="Введите текущий пароль"/></Field>
-        <Field label="Новый пароль"><input className={inputClass} type="password" value={pw.next} onChange={e=>setPw(x=>({...x,next:e.target.value}))} placeholder="Введите новый пароль"/></Field>
-        <Field label="Повторите новый пароль"><input className={inputClass} type="password" value={pw.repeat} onChange={e=>setPw(x=>({...x,repeat:e.target.value}))} placeholder="Повторите новый пароль"/></Field>
-        <div className="flex items-center justify-between gap-3"><span className="text-xs text-red-500">{pmsg}</span><button type="button" onClick={change} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b]"><KeyRound size={16}/>Изменить пароль</button></div>
-      </div>
-    </section>
+      <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
+        <SectionHeader icon={<MapPin size={19}/>} title="Пункт осмотра" description="Пункт определяется аккаунтом администратора. Здесь нельзя переключиться на другой пункт."/>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Field label="Пункт, закреплённый за аккаунтом" className="sm:col-span-2">
+            <input className={inputClass} value={pointId ? `${v.inspection_point_name || `Пункт №${pointId}`} (ID ${pointId})` : "Пункт не назначен"} readOnly disabled />
+          </Field>
+          <Field label="Название пункта"><input className={inputClass} value={v.inspection_point_name} onChange={e=>set("inspection_point_name",e.target.value)} placeholder="Пункт №1"/></Field>
+          <Field label="Адрес пункта"><input className={inputClass} value={v.inspection_point_address} onChange={e=>set("inspection_point_address",e.target.value)} placeholder="Адрес пункта предрейсового осмотра"/></Field>
+          <Field label="Фамилия медика"><input className={inputClass} value={v.medic_surname} onChange={e=>set("medic_surname",e.target.value)} placeholder="Фамилия"/></Field>
+          <Field label="Фамилия механика"><input className={inputClass} value={v.mechanic_surname} onChange={e=>set("mechanic_surname",e.target.value)} placeholder="Фамилия"/></Field>
+          <Field label="Стоимость медосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.medical_exam_price} onChange={e=>set("medical_exam_price",Number(e.target.value))}/></Field>
+          <Field label="Стоимость мехосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.mechanic_exam_price} onChange={e=>set("mechanic_exam_price",Number(e.target.value))}/></Field>
+        </div>
+      </section>
+    </div>
 
     <section className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
       <div className="p-5 sm:p-6">
