@@ -127,6 +127,17 @@ export default function AdminDashboardPage(): JSX.Element {
   }, [loading]);
 
   useEffect(() => {
+    const handlePointSettingsUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ name?: string; address?: string }>).detail;
+      setInspectionPointName(detail?.name || "");
+      setInspectionPointAddress(detail?.address || "");
+    };
+
+    window.addEventListener("transport-shield:inspection-point-updated", handlePointSettingsUpdated);
+    return () => window.removeEventListener("transport-shield:inspection-point-updated", handlePointSettingsUpdated);
+  }, []);
+
+  useEffect(() => {
     const titles: Record<TabType, string> = {
       checks: "Журнал осмотров",
       drivers: "Водители",
@@ -219,22 +230,6 @@ export default function AdminDashboardPage(): JSX.Element {
           </button>
         </div>
 
-        {isSidebarOpen && (
-          <div className="border-b border-slate-100 px-3 py-3">
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-              Адрес пункта
-            </div>
-            <div className="mt-1 text-xs font-medium leading-5 text-slate-700">
-              {inspectionPointAddress || "Адрес не указан"}
-            </div>
-            {inspectionPointName && (
-              <div className="mt-0.5 truncate text-[10px] text-slate-400" title={inspectionPointName}>
-                {inspectionPointName}
-              </div>
-            )}
-          </div>
-        )}
-
         <nav className="flex-1 space-y-1 p-2">
           {tabs.map((tab) => (
             <NavButton
@@ -246,6 +241,22 @@ export default function AdminDashboardPage(): JSX.Element {
               label={tab.label}
             />
           ))}
+
+          {isSidebarOpen && (
+            <div className="mt-3 border-t border-slate-100 px-3 pt-3">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                Адрес пункта
+              </div>
+              <div className="mt-1 text-xs font-medium leading-5 text-slate-700">
+                {inspectionPointAddress || "Адрес не указан"}
+              </div>
+              {inspectionPointName && (
+                <div className="mt-0.5 truncate text-[10px] text-slate-400" title={inspectionPointName}>
+                  {inspectionPointName}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         <button
