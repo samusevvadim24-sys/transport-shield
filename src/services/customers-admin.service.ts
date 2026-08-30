@@ -69,7 +69,7 @@ export async function fetchCustomers({
  * Она:
  * 1. Создаёт запись в users.
  * 2. login = number.
- * 3. password = number (хеш создаётся на уровне RPC или в этой функции).
+ * 3. password = хеш number (хеш создаётся на уровне этой функции).
  * 4. role = customer.
  * 5. Получает users.id.
  * 6. Создаёт customers с user_id.
@@ -100,7 +100,7 @@ export async function createCustomer(
     };
   }
 
-  // Хешируем пароль (по умолчанию = номер заказчика)
+  // Хешируем пароль через API (по умолчанию = номер заказчика)
   const passwordToHash = String(newCustomer.number).trim();
   const hashedPassword = await hashPassword(passwordToHash);
 
