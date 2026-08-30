@@ -18,171 +18,142 @@ export interface DriverData {
   inspection_scope?: 'medical' | 'mechanic' | 'both';
 }
 
-const DRIVER_SELECT = `
-  *,
-  customers (
-    name
-  )
-`;
+const DRIVER_SELECT = `*, customers (name)`;
 
 export const DriverDashboardService = {
   async getDriverByNumber(userLogin: string): Promise<DriverData | null> {
-    let { data, error } = await supabase
-      .from('drivers')
-      .select(DRIVER_SELECT)
-      .eq('driver_id', userLogin)
-      .maybeSingle();
-
+    let { data, error } = await supabase.from('drivers').select(DRIVER_SELECT).eq('driver_id', userLogin).maybeSingle();
     if (!data) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id')
-        .eq('login', userLogin)
-        .maybeSingle();
-
+      const { data: userData } = await supabase.from('users').select('id').eq('login', userLogin).maybeSingle();
       if (userData?.id) {
-        const result = await supabase
-          .from('drivers')
-          .select(DRIVER_SELECT)
-          .eq('user_id', userData.id)
-          .maybeSingle();
+        const result = await supabase.from('drivers').select(DRIVER_SELECT).eq('user_id', userData.id).maybeSingle();
         data = result.data;
         error = result.error;
       }
     }
-
     if (error) {
       console.error('Ошибка при запросе водителя:', error.message);
       return null;
     }
-
-    if (!data) {
-      console.warn(`Водитель с логином/табельным номером "${userLogin}" не найден в базе drivers.`);
-      return null;
-    }
-
-    return {
-      ...data,
-      customerName: (data.customers as any)?.name || 'Не указана',
-      inspection_scope: data.inspection_scope || 'both',
-    };
+    if (!data) return null;
+    return { ...data, customerName: (data.customers as any)?.name || 'Не указана', inspection_scope: data.inspection_scope || 'both' };
   },
 
-  async subscribeToDriver(
-    driverDbId: number,
-    userLogin: string,
-    onUpdate: (driver: DriverData | null) => void
-  ) {
+  subscribeToDriver(driverDbId: number, userLogin: string, onUpdate: (driver: DriverData | null) => void) {
+    let active = true;
+    let refreshInFlight = false;
+    let refreshQueued = false;
+
     const refresh = async () => {
-      const driver = await this.getDriverByNumber(userLogin);
-      onUpdate(driver);
-    };
-
-    await refresh();
-
-    const channel = supabase
-      .channel(`driver-data-${driverDbId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'drivers',
-          filter: `id=eq.${driverDbId}`,
-        },
-        refresh
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  },
-
-  async subscribeToChecks(driverDbId: number, onUpdate: (inspections: any[]) => void) {
-    const refresh = async () => {
-      const { data, error } = await supabase
-        .from('inspections')
-        .select('*')
-        .eq('driver_id', driverDbId)
-        .order('requested_at', { ascending: false });
-
-      if (error) {
-        console.error('Ошибка обновления осмотров:', error.message);
+      if (!active) return;
+      if (refreshInFlight) {
+        refreshQueued = true;
         return;
       }
-      onUpdate(data || []);
+      refreshInFlight = true;
+      try {
+        const driver = await this.getDriverByNumber(userLogin);
+        if (active) onUpdate(driver);
+      } finally {
+        refreshInFlight = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void refresh();
+        }
+      }
     };
 
-    await refresh();
-
-    const channel = supabase
-      .channel(`driver-inspections-${driverDbId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'inspections',
-          filter: `driver_id=eq.${driverDbId}`,
-        },
-        refresh
-      )
+    void refresh();
+    const channel = supabase.channel(`driver-data-${driverDbId}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers', filter: `id=eq.${driverDbId}` }, () => void refresh())
       .subscribe();
 
-    // Fallback на случай потери realtime-события/переподключения.
-    const interval = setInterval(refresh, 30000);
+    const interval = window.setInterval(() => void refresh(), 30000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      void supabase.removeChannel(channel);
+    };
+  },
+
+  subscribeToChecks(driverDbId: number, onUpdate: (inspections: any[]) => void) {
+    let active = true;
+    let requestId = 0;
+    let refreshInFlight = false;
+    let refreshQueued = false;
+
+    const refresh = async () => {
+      if (!active) return;
+      if (refreshInFlight) {
+        refreshQueued = true;
+        return;
+      }
+      refreshInFlight = true;
+      const currentRequest = ++requestId;
+      try {
+        const { data, error } = await supabase.from('inspections').select('*').eq('driver_id', driverDbId).order('requested_at', { ascending: false });
+        if (!error && active && currentRequest === requestId) onUpdate(data || []);
+        if (error) console.error('Ошибка обновления осмотров:', error.message);
+      } finally {
+        refreshInFlight = false;
+        if (active && refreshQueued) {
+          refreshQueued = false;
+          void refresh();
+        }
+      }
+    };
+
+    void refresh();
+    const channel = supabase.channel(`driver-inspections-${driverDbId}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inspections', filter: `driver_id=eq.${driverDbId}` }, () => void refresh())
+      .subscribe();
+    const interval = window.setInterval(() => void refresh(), 30000);
 
     return () => {
-      clearInterval(interval);
-      supabase.removeChannel(channel);
+      active = false;
+      requestId++;
+      window.clearInterval(interval);
+      void supabase.removeChannel(channel);
+    };
+  },
+
+  subscribeToSettings(onUpdate: (settings: any) => void) {
+    let active = true;
+    const refresh = async () => {
+      if (!active) return;
+      try {
+        const { fetchSystemSettings } = await import('@/services/settings.service');
+        const settings = await fetchSystemSettings();
+        if (active) onUpdate(settings);
+      } catch (error) {
+        console.error('Ошибка обновления настроек:', error);
+      }
+    };
+    void refresh();
+    const channel = supabase.channel(`driver-system-settings-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings', filter: 'id=eq.1' }, () => void refresh())
+      .subscribe();
+    const interval = window.setInterval(() => void refresh(), 30000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      void supabase.removeChannel(channel);
     };
   },
 
   async acknowledgeSummon(inspectionId: number) {
-    const { error } = await supabase
-      .from('inspections')
-      .update({ summon_acknowledged: true } as any)
-      .eq('id', inspectionId);
-
-    if (error) {
-      console.error('Ошибка подтверждения вызова:', error.message);
-      throw new Error(error.message);
-    }
+    const { error } = await supabase.from('inspections').update({ summon_acknowledged: true } as any).eq('id', inspectionId);
+    if (error) throw new Error(error.message);
   },
 
   async createInspection(driverDbId: number) {
-    const { data: driver, error: driverError } = await supabase
-      .from('drivers')
-      .select('inspection_scope')
-      .eq('id', driverDbId)
-      .single();
-
-    if (driverError) {
-      console.error('Ошибка получения типа осмотра:', driverError.message);
-      throw new Error(driverError.message);
-    }
-
+    const { data: driver, error: driverError } = await supabase.from('drivers').select('inspection_scope').eq('id', driverDbId).single();
+    if (driverError) throw new Error(driverError.message);
     const scope = driver?.inspection_scope || 'both';
-    const newInspection: Record<string, any> = {
-      driver_id: driverDbId,
-      requested_at: new Date().toISOString(),
-      overall_status: 'Ожидание',
-    };
-
-    if (scope === 'medical' || scope === 'both') {
-      newInspection.medical_status = 'Ожидание';
-    }
-
-    if (scope === 'mechanic' || scope === 'both') {
-      newInspection.mechanic_status = 'Ожидание';
-    }
-
+    const newInspection: Record<string, any> = { driver_id: driverDbId, requested_at: new Date().toISOString(), overall_status: 'Ожидание' };
+    if (scope === 'medical' || scope === 'both') newInspection.medical_status = 'Ожидание';
+    if (scope === 'mechanic' || scope === 'both') newInspection.mechanic_status = 'Ожидание';
     const { error } = await supabase.from('inspections').insert([newInspection]);
-
-    if (error) {
-      console.error('Ошибка создания запроса на осмотр:', error.message);
-      throw new Error(error.message);
-    }
+    if (error) throw new Error(error.message);
   },
 };
