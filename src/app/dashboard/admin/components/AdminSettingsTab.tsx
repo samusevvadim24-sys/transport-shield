@@ -2,25 +2,114 @@
 
 import { useEffect, useState } from "react";
 import { Building2, KeyRound, LockKeyhole, MapPin, Save, ShieldCheck } from "lucide-react";
-import { fetchAdminInspectionPointId, fetchInspectionPoints, fetchSystemSettings, updateAdminInspectionPoint, updateInspectionPointSettings, updateAdminPassword, updateSystemSettings, SystemSettings } from "../../../../services/settings.service";
-import type { InspectionPoint } from "../../../../types/database.types";
+import { fetchAdminInspectionPointId, fetchSystemSettings, updateInspectionPointSettings, updateAdminPassword, updateSystemSettings, SystemSettings } from "../../../../services/settings.service";
 
 const EMPTY:SystemSettings={id:1,inspection_point_id:null,inspection_point_name:"",inspection_point_address:"",medic_surname:"",mechanic_surname:"",medical_exam_price:0.9,mechanic_exam_price:0.9,organization_name:"",organization_address:"",organization_bank_account:"",organization_unp:"",organization_phone:"",organization_email:"",organization_director_name:""};
 const inputClass="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#042433]/40 focus:bg-white focus:ring-4 focus:ring-[#042433]/5";
 function Field({label,children,className=""}:{label:string;children:React.ReactNode;className?:string}){return <label className={`block ${className}`}><span className="mb-2 block text-xs font-semibold text-slate-600">{label}</span>{children}</label>}
 function SectionHeader({icon,title,description}:{icon:React.ReactNode;title:string;description:string}){return <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">{icon}</div><div><h2 className="text-sm font-semibold text-slate-900">{title}</h2><p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p></div></div>}
+
 export default function AdminSettingsTab(){
-  const[v,setV]=useState<SystemSettings>(EMPTY);const[points,setPoints]=useState<InspectionPoint[]>([]);const[pointId,setPointId]=useState<number|null>(null);const[loading,setLoading]=useState(true);const[saving,setSaving]=useState(false);const[msg,setMsg]=useState("");const[pw,setPw]=useState({current:"",next:"",repeat:""});const[pmsg,setPmsg]=useState("");
-  useEffect(()=>{let active=true;Promise.all([fetchInspectionPoints(),fetchAdminInspectionPointId(),fetchSystemSettings()]).then(([ps,adminPoint,settings])=>{if(!active)return;setPoints(ps);setPointId(adminPoint??settings.inspection_point_id??ps[0]?.id??null);setV(settings)}).catch(e=>setMsg(e.message)).finally(()=>{if(active)setLoading(false)});return()=>{active=false}},[]);
-  useEffect(()=>{if(!pointId)return;fetchSystemSettings(pointId).then(setV).catch(e=>setMsg(e.message))},[pointId]);
+  const[v,setV]=useState<SystemSettings>(EMPTY);
+  const[pointId,setPointId]=useState<number|null>(null);
+  const[loading,setLoading]=useState(true);
+  const[saving,setSaving]=useState(false);
+  const[msg,setMsg]=useState("");
+  const[pw,setPw]=useState({current:"",next:"",repeat:""});
+  const[pmsg,setPmsg]=useState("");
+
+  useEffect(()=>{
+    let active=true;
+    Promise.all([fetchAdminInspectionPointId(),fetchSystemSettings()])
+      .then(([adminPoint,settings])=>{
+        if(!active)return;
+        const resolved=adminPoint??settings.inspection_point_id??null;
+        setPointId(resolved);
+        setV(settings);
+      })
+      .catch(e=>setMsg(e.message))
+      .finally(()=>{if(active)setLoading(false)});
+    return()=>{active=false};
+  },[]);
+
   const set=(key:keyof SystemSettings,value:string|number)=>setV(x=>({...x,[key]:value}));
-  const changePoint=async(id:number)=>{setMsg("");const{error}=await updateAdminInspectionPoint(id);if(error){setMsg(error.message);return}setPointId(id);setMsg("Пункт осмотра выбран")};
-  const save=async()=>{if(!pointId){setMsg("Для администратора не назначен пункт осмотра");return}setSaving(true);setMsg("");const{inspection_point_name,inspection_point_address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price,organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,organization_director_name}=v;const[pointResult,orgResult]=await Promise.all([updateInspectionPointSettings(pointId,{name:inspection_point_name,address:inspection_point_address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price}),updateSystemSettings({organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,organization_director_name})]);const error=pointResult.error||orgResult.error;setMsg(error?error.message:"Настройки сохранены");setSaving(false)};
-  const change=async()=>{setPmsg("");if(!pw.current||!pw.next){setPmsg("Заполните текущий и новый пароль");return}if(pw.next!==pw.repeat){setPmsg("Новые пароли не совпадают");return}const raw=localStorage.getItem("ts_user_session");const session=raw?JSON.parse(raw):null;if(!session?.id||session.role!=="admin"){setPmsg("Сессия администратора не найдена");return}const{error}=await updateAdminPassword(session.id,pw.current,pw.next);setPmsg(error?error.message:"Пароль успешно изменён");if(!error)setPw({current:"",next:"",repeat:""})};
+
+  const save=async()=>{
+    if(!pointId){setMsg("Для этого аккаунта администратора не назначен пункт осмотра");return}
+    setSaving(true);setMsg("");
+    const{inspection_point_name,inspection_point_address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price,organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,organization_director_name}=v;
+    const[pointResult,orgResult]=await Promise.all([
+      updateInspectionPointSettings(pointId,{name:inspection_point_name,address:inspection_point_address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price}),
+      updateSystemSettings({organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,organization_director_name})
+    ]);
+    const error=pointResult.error||orgResult.error;
+    setMsg(error?error.message:"Настройки сохранены");
+    setSaving(false);
+  };
+
+  const change=async()=>{
+    setPmsg("");
+    if(!pw.current||!pw.next){setPmsg("Заполните текущий и новый пароль");return}
+    if(pw.next!==pw.repeat){setPmsg("Новые пароли не совпадают");return}
+    const raw=localStorage.getItem("ts_user_session");
+    const session=raw?JSON.parse(raw):null;
+    if(!session?.id||session.role!=="admin"){setPmsg("Сессия администратора не найдена");return}
+    const{error}=await updateAdminPassword(session.id,pw.current,pw.next);
+    setPmsg(error?error.message:"Пароль успешно изменён");
+    if(!error)setPw({current:"",next:"",repeat:""});
+  };
+
   if(loading)return <div className="flex min-h-[320px] items-center justify-center text-sm text-slate-500">Загрузка настроек...</div>;
-  return <section className="space-y-7 pb-8"><header><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400"><ShieldCheck size={15}/>Администрирование</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Настройки</h1><p className="mt-1 max-w-2xl text-sm text-slate-500">Настройки текущего пункта осмотра и общие реквизиты организации.</p></header>
-    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6"><SectionHeader icon={<MapPin size={19}/>} title="Пункт осмотра" description="Адрес, специалисты и стоимость принадлежат выбранному пункту."/><div className="mt-6 grid gap-4 sm:grid-cols-2"><Field label="Текущий пункт"><select className={inputClass} value={pointId??""} onChange={e=>changePoint(Number(e.target.value))}><option value="" disabled>Выберите пункт</option>{points.map(p=><option key={p.id} value={p.id}>{p.name||`Пункт №${p.id}`}</option>)}</select></Field><Field label="Название пункта"><input className={inputClass} value={v.inspection_point_name} onChange={e=>set("inspection_point_name",e.target.value)} placeholder="Пункт №1"/></Field><Field label="Адрес пункта" className="sm:col-span-2"><input className={inputClass} value={v.inspection_point_address} onChange={e=>set("inspection_point_address",e.target.value)} placeholder="Адрес пункта предрейсового осмотра"/></Field><Field label="Фамилия медика"><input className={inputClass} value={v.medic_surname} onChange={e=>set("medic_surname",e.target.value)} placeholder="Фамилия"/></Field><Field label="Фамилия механика"><input className={inputClass} value={v.mechanic_surname} onChange={e=>set("mechanic_surname",e.target.value)} placeholder="Фамилия"/></Field><Field label="Стоимость медосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.medical_exam_price} onChange={e=>set("medical_exam_price",Number(e.target.value))}/></Field><Field label="Стоимость мехосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.mechanic_exam_price} onChange={e=>set("mechanic_exam_price",Number(e.target.value))}/></Field></div></section>
-    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6"><SectionHeader icon={<LockKeyhole size={19}/>} title="Пароль администратора" description="Изменение пароля текущей учётной записи администратора."/><div className="mt-6 space-y-4"><Field label="Текущий пароль"><input className={inputClass} type="password" value={pw.current} onChange={e=>setPw(x=>({...x,current:e.target.value}))} placeholder="Введите текущий пароль"/></Field><Field label="Новый пароль"><input className={inputClass} type="password" value={pw.next} onChange={e=>setPw(x=>({...x,next:e.target.value}))} placeholder="Введите новый пароль"/></Field><Field label="Повторите новый пароль"><input className={inputClass} type="password" value={pw.repeat} onChange={e=>setPw(x=>({...x,repeat:e.target.value}))} placeholder="Повторите новый пароль"/></Field><div className="flex items-center justify-between gap-3"><span className="text-xs text-red-500">{pmsg}</span><button type="button" onClick={change} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b]"><KeyRound size={16}/>Изменить пароль</button></div></div></section>
-    <section className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]"><div className="p-5 sm:p-6"><SectionHeader icon={<Building2 size={19}/>} title="Данные организации" description="Эти реквизиты общие для всех пунктов осмотра."/><div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><Field label="Название организации" className="sm:col-span-2 lg:col-span-2"><input className={inputClass} value={v.organization_name} onChange={e=>set("organization_name",e.target.value)} placeholder="Название организации"/></Field><Field label="Имя директора"><input className={inputClass} value={v.organization_director_name} onChange={e=>set("organization_director_name",e.target.value)} placeholder="ФИО директора"/></Field><Field label="Расчётный счёт"><input className={inputClass} value={v.organization_bank_account} onChange={e=>set("organization_bank_account",e.target.value)} placeholder="Расчётный счёт"/></Field><Field label="УНП"><input className={inputClass} value={v.organization_unp} onChange={e=>set("organization_unp",e.target.value)} placeholder="УНП"/></Field><Field label="Телефон"><input className={inputClass} value={v.organization_phone} onChange={e=>set("organization_phone",e.target.value)} placeholder="Телефон"/></Field><Field label="Email"><input className={inputClass} type="email" value={v.organization_email} onChange={e=>set("organization_email",e.target.value)} placeholder="Email"/></Field></div></div><div className="flex flex-col gap-3 rounded-b-2xl bg-slate-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"><span className={msg.includes("ош")||msg.includes("Ошибка")?"text-sm text-red-500":"text-sm text-emerald-600"}>{msg}</span><button type="button" disabled={saving} onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b] disabled:opacity-50"><Save size={16}/>{saving?"Сохранение...":"Сохранить настройки"}</button></div></section>
+
+  return <section className="space-y-7 pb-8">
+    <header>
+      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400"><ShieldCheck size={15}/>Администрирование</div>
+      <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900">Настройки</h1>
+      <p className="mt-1 max-w-2xl text-sm text-slate-500">Настройки пункта осмотра, закреплённого за текущим аккаунтом администратора, и общие реквизиты организации.</p>
+    </header>
+
+    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
+      <SectionHeader icon={<MapPin size={19}/>} title="Пункт осмотра" description="Пункт определяется аккаунтом администратора. Здесь нельзя переключиться на другой пункт."/>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        <Field label="Пункт, закреплённый за аккаунтом">
+          <input className={inputClass} value={pointId ? `${v.inspection_point_name || `Пункт №${pointId}`} (ID ${pointId})` : "Пункт не назначен"} readOnly disabled />
+        </Field>
+        <Field label="Название пункта">
+          <input className={inputClass} value={v.inspection_point_name} onChange={e=>set("inspection_point_name",e.target.value)} placeholder="Пункт №1"/>
+        </Field>
+        <Field label="Адрес пункта" className="sm:col-span-2">
+          <input className={inputClass} value={v.inspection_point_address} onChange={e=>set("inspection_point_address",e.target.value)} placeholder="Адрес пункта предрейсового осмотра"/>
+        </Field>
+        <Field label="Фамилия медика"><input className={inputClass} value={v.medic_surname} onChange={e=>set("medic_surname",e.target.value)} placeholder="Фамилия"/></Field>
+        <Field label="Фамилия механика"><input className={inputClass} value={v.mechanic_surname} onChange={e=>set("mechanic_surname",e.target.value)} placeholder="Фамилия"/></Field>
+        <Field label="Стоимость медосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.medical_exam_price} onChange={e=>set("medical_exam_price",Number(e.target.value))}/></Field>
+        <Field label="Стоимость мехосмотра, BYN"><input className={inputClass} type="number" min="0" step="0.01" value={v.mechanic_exam_price} onChange={e=>set("mechanic_exam_price",Number(e.target.value))}/></Field>
+      </div>
+    </section>
+
+    <section className="rounded-2xl bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.05)] sm:p-6">
+      <SectionHeader icon={<LockKeyhole size={19}/>} title="Пароль администратора" description="Изменение пароля текущей учётной записи администратора."/>
+      <div className="mt-6 space-y-4">
+        <Field label="Текущий пароль"><input className={inputClass} type="password" value={pw.current} onChange={e=>setPw(x=>({...x,current:e.target.value}))} placeholder="Введите текущий пароль"/></Field>
+        <Field label="Новый пароль"><input className={inputClass} type="password" value={pw.next} onChange={e=>setPw(x=>({...x,next:e.target.value}))} placeholder="Введите новый пароль"/></Field>
+        <Field label="Повторите новый пароль"><input className={inputClass} type="password" value={pw.repeat} onChange={e=>setPw(x=>({...x,repeat:e.target.value}))} placeholder="Повторите новый пароль"/></Field>
+        <div className="flex items-center justify-between gap-3"><span className="text-xs text-red-500">{pmsg}</span><button type="button" onClick={change} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b]"><KeyRound size={16}/>Изменить пароль</button></div>
+      </div>
+    </section>
+
+    <section className="rounded-2xl bg-white shadow-[0_8px_30px_rgba(15,23,42,0.05)]">
+      <div className="p-5 sm:p-6">
+        <SectionHeader icon={<Building2 size={19}/>} title="Данные организации" description="Эти реквизиты общие для всех пунктов осмотра."/>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Field label="Название организации" className="sm:col-span-2 lg:col-span-2"><input className={inputClass} value={v.organization_name} onChange={e=>set("organization_name",e.target.value)} placeholder="Название организации"/></Field>
+          <Field label="Имя директора"><input className={inputClass} value={v.organization_director_name} onChange={e=>set("organization_director_name",e.target.value)} placeholder="ФИО директора"/></Field>
+          <Field label="Расчётный счёт"><input className={inputClass} value={v.organization_bank_account} onChange={e=>set("organization_bank_account",e.target.value)} placeholder="Расчётный счёт"/></Field>
+          <Field label="УНП"><input className={inputClass} value={v.organization_unp} onChange={e=>set("organization_unp",e.target.value)} placeholder="УНП"/></Field>
+          <Field label="Телефон"><input className={inputClass} value={v.organization_phone} onChange={e=>set("organization_phone",e.target.value)} placeholder="Телефон"/></Field>
+          <Field label="Email"><input className={inputClass} type="email" value={v.organization_email} onChange={e=>set("organization_email",e.target.value)} placeholder="Email"/></Field>
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 rounded-b-2xl bg-slate-50/80 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"><span className={msg.includes("ош")||msg.includes("Ошибка")?"text-sm text-red-500":"text-sm text-emerald-600"}>{msg}</span><button type="button" disabled={saving} onClick={save} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#042433] px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#06364b] disabled:opacity-50"><Save size={16}/>{saving?"Сохранение...":"Сохранить настройки"}</button></div>
+    </section>
   </section>;
 }
