@@ -94,7 +94,7 @@ export async function createDriver(formData: DriverFormData) {
       return { data: null, error: { message: "Пароль обязателен." } };
     }
 
-    // Хешируем пароль перед сохранением
+    // Хешируем пароль перед сохранением (вызывает API)
     const hashedPassword = await hashPassword(formData.password);
 
     // Создаем пользователя
@@ -152,7 +152,7 @@ export async function updateDriver(
     if (userId) {
       const userUpdates: Record<string, any> = { login: formData.login };
       if (formData.password && formData.password.trim() !== "") {
-        // Хешируем новый пароль перед сохранением
+        // Хешируем новый пароль перед сохранением (вызывает API)
         userUpdates.password = await hashPassword(formData.password);
       }
 
