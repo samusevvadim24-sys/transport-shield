@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from '@/lib/supabase';
+import { fetchSystemSettings } from '@/services/settings.service';
 
 export interface DriverData {
   id: number;
@@ -16,6 +17,7 @@ export interface DriverData {
   user_id?: number;
   customerName?: string;
   inspection_scope?: 'medical' | 'mechanic' | 'both';
+  inspection_point_id?: number | null;
 }
 
 const DRIVER_SELECT = `*, customers (name)`;
@@ -90,23 +92,27 @@ export const DriverDashboardService = {
     return () => { active = false; requestId++; window.clearInterval(interval); void supabase.removeChannel(channel); };
   },
 
-  subscribeToSettings(onUpdate: (settings: any) => void) {
+  subscribeToSettings(pointId: number | null | undefined, onUpdate: (settings: any) => void) {
     let active = true;
     let refreshInFlight = false;
+    let refreshQueued = false;
     const refresh = async () => {
-      if (!active || refreshInFlight) return;
+      if (!active) return;
+      if (refreshInFlight) { refreshQueued = true; return; }
       refreshInFlight = true;
       try {
-        const { fetchSystemSettings } = await import('@/services/settings.service');
-        const settings = await fetchSystemSettings();
+        const settings = await fetchSystemSettings(pointId);
         if (active) onUpdate(settings);
       } catch (error) {
         console.error('Ошибка обновления настроек:', error);
-      } finally { refreshInFlight = false; }
+      } finally {
+        refreshInFlight = false;
+        if (active && refreshQueued) { refreshQueued = false; void refresh(); }
+      }
     };
     void refresh();
-    const channel = supabase.channel(`driver-system-settings-${Date.now()}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'system_settings', filter: 'id=eq.1' }, () => void refresh())
+    const channel = supabase.channel(`driver-system-settings-${pointId ?? 'default'}-${Date.now()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inspection_points', filter: pointId ? `id=eq.${pointId}` : undefined }, () => void refresh())
       .subscribe();
     const interval = window.setInterval(() => void refresh(), 30000);
     return () => { active = false; window.clearInterval(interval); void supabase.removeChannel(channel); };
@@ -118,10 +124,15 @@ export const DriverDashboardService = {
   },
 
   async createInspection(driverDbId: number) {
-    const { data: driver, error: driverError } = await supabase.from('drivers').select('inspection_scope').eq('id', driverDbId).single();
+    const { data: driver, error: driverError } = await supabase.from('drivers').select('inspection_scope,inspection_point_id').eq('id', driverDbId).single();
     if (driverError) throw new Error(driverError.message);
     const scope = driver?.inspection_scope || 'both';
-    const newInspection: Record<string, any> = { driver_id: driverDbId, requested_at: new Date().toISOString(), overall_status: 'Ожидание' };
+    const newInspection: Record<string, any> = {
+      driver_id: driverDbId,
+      inspection_point_id: driver?.inspection_point_id ?? null,
+      requested_at: new Date().toISOString(),
+      overall_status: 'Ожидание',
+    };
     if (scope === 'medical' || scope === 'both') newInspection.medical_status = 'Ожидание';
     if (scope === 'mechanic' || scope === 'both') newInspection.mechanic_status = 'Ожидание';
     const { error } = await supabase.from('inspections').insert([newInspection]);
