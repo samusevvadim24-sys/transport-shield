@@ -12,6 +12,7 @@ import {
   ChevronLeft,
   Settings,
 } from "lucide-react";
+import { fetchSystemSettings } from "@/services/settings.service";
 import ChecksTab from "./components/ChecksTab";
 import CustomersTab from "./components/CustomersTab";
 import DriversTab from "./components/DriversTab";
@@ -70,6 +71,8 @@ export default function AdminDashboardPage(): JSX.Element {
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [inspectionPointAddress, setInspectionPointAddress] = useState("");
+  const [inspectionPointName, setInspectionPointName] = useState("");
 
   useEffect(() => {
     try {
@@ -95,6 +98,33 @@ export default function AdminDashboardPage(): JSX.Element {
       router.replace("/");
     }
   }, [router]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    let cancelled = false;
+
+    const loadInspectionPoint = async () => {
+      try {
+        const settings = await fetchSystemSettings();
+        if (cancelled) return;
+        setInspectionPointName(settings.inspection_point_name || "");
+        setInspectionPointAddress(settings.inspection_point_address || "");
+      } catch (error) {
+        console.error("Не удалось загрузить пункт осмотра администратора:", error);
+        if (!cancelled) {
+          setInspectionPointName("");
+          setInspectionPointAddress("");
+        }
+      }
+    };
+
+    void loadInspectionPoint();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading]);
 
   useEffect(() => {
     const titles: Record<TabType, string> = {
@@ -188,6 +218,22 @@ export default function AdminDashboardPage(): JSX.Element {
             {isSidebarOpen ? <ChevronLeft size={20} /> : <Menu size={20} />}
           </button>
         </div>
+
+        {isSidebarOpen && (
+          <div className="border-b border-slate-100 px-3 py-3">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Адрес пункта
+            </div>
+            <div className="mt-1 text-xs font-medium leading-5 text-slate-700">
+              {inspectionPointAddress || "Адрес не указан"}
+            </div>
+            {inspectionPointName && (
+              <div className="mt-0.5 truncate text-[10px] text-slate-400" title={inspectionPointName}>
+                {inspectionPointName}
+              </div>
+            )}
+          </div>
+        )}
 
         <nav className="flex-1 space-y-1 p-2">
           {tabs.map((tab) => (
