@@ -53,7 +53,6 @@ export async function fetchInspectionPoints(): Promise<InspectionPoint[]> {
     .order("id", { ascending: true });
 
   if (error) throw error;
-
   return (data ?? []).map((point: any) => ({
     id: Number(point.id),
     name: point.name ?? "",
@@ -65,6 +64,7 @@ export async function fetchInspectionPoints(): Promise<InspectionPoint[]> {
   }));
 }
 
+/** Inspection point belongs to the administrator account. */
 export async function fetchAdminInspectionPointId() {
   const id = currentAdminId();
   if (!id) return null;
@@ -77,11 +77,11 @@ export async function fetchAdminInspectionPointId() {
     .maybeSingle();
 
   if (error) throw error;
-
   const pointId = Number(data?.inspection_point_id);
   return Number.isFinite(pointId) && pointId > 0 ? pointId : null;
 }
 
+/** Used only by administrator-management code, never by the settings selector. */
 export async function updateAdminInspectionPoint(pointId: number) {
   const id = currentAdminId();
   if (!id) return { error: new Error("Сессия администратора не найдена") };
@@ -101,9 +101,8 @@ export async function updateAdminInspectionPoint(pointId: number) {
 }
 
 export async function fetchSystemSettings(pointId?: number | null): Promise<SystemSettings> {
-  let resolved = pointId ?? null;
-  if (!resolved) resolved = await fetchAdminInspectionPointId();
-  if (!resolved) resolved = 1;
+  const resolved = pointId ?? await fetchAdminInspectionPointId();
+  if (!resolved) return { ...EMPTY };
 
   const [{ data: org, error: orgError }, { data: point, error: pointError }] = await Promise.all([
     supabase
@@ -120,7 +119,7 @@ export async function fetchSystemSettings(pointId?: number | null): Promise<Syst
 
   if (orgError) throw orgError;
   if (pointError) throw pointError;
-  if (!point) return EMPTY;
+  if (!point) return { ...EMPTY, inspection_point_id: resolved };
 
   return {
     id: Number(org?.id ?? 1),
@@ -159,24 +158,11 @@ export async function updateInspectionPointSettings(
     medical_exam_price: Number(values.medical_exam_price) || 0,
     mechanic_exam_price: Number(values.mechanic_exam_price) || 0,
   };
-
   if (values.name?.trim()) payload.name = values.name.trim();
-
   return supabase.from("inspection_points").update(payload).eq("id", pointId);
 }
 
-export async function updateSystemSettings(
-  values: Pick<
-    SystemSettings,
-    | "organization_name"
-    | "organization_address"
-    | "organization_bank_account"
-    | "organization_unp"
-    | "organization_phone"
-    | "organization_email"
-    | "organization_director_name"
-  >
-) {
+export async function updateSystemSettings(values: Pick<SystemSettings, "organization_name" | "organization_address" | "organization_bank_account" | "organization_unp" | "organization_phone" | "organization_email" | "organization_director_name">) {
   return supabase.from("system_settings").upsert({
     id: 1,
     organization_name: values.organization_name.trim(),
@@ -198,25 +184,12 @@ export async function updateAdminPassword(userId: number, currentPassword: strin
   if (next.length < 6) return { error: new Error("Новый пароль должен содержать минимум 6 символов") };
   if (current === next) return { error: new Error("Новый пароль должен отличаться от текущего") };
 
-  const { data: user, error: readError } = await supabase
-    .from("users")
-    .select("id,password,role")
-    .eq("id", userId)
-    .eq("role", "admin")
-    .maybeSingle();
-
+  const { data: user, error: readError } = await supabase.from("users").select("id,password,role").eq("id", userId).eq("role", "admin").maybeSingle();
   if (readError) return { error: readError };
   if (!user) return { error: new Error("Администратор не найден") };
   if (user.password !== current) return { error: new Error("Текущий пароль указан неверно") };
 
-  const { data: updatedUser, error: updateError } = await supabase
-    .from("users")
-    .update({ password: next })
-    .eq("id", userId)
-    .eq("role", "admin")
-    .select("id")
-    .maybeSingle();
-
+  const { data: updatedUser, error: updateError } = await supabase.from("users").update({ password: next }).eq("id", userId).eq("role", "admin").select("id").maybeSingle();
   if (updateError) return { error: updateError };
   if (!updatedUser) return { error: new Error("Пароль не изменён: база данных не вернула обновлённую запись. Проверьте RLS для public.users.") };
   return { error: null };
