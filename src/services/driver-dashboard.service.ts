@@ -76,7 +76,11 @@ export const DriverDashboardService = {
       refreshInFlight = true;
       const currentRequest = ++requestId;
       try {
-        const { data, error } = await supabase.from('inspections').select('*').eq('driver_id', driverDbId).order('requested_at', { ascending: false });
+        const { data, error } = await supabase
+          .from('inspections')
+          .select(`*, inspection_points (id, name, address)`)
+          .eq('driver_id', driverDbId)
+          .order('requested_at', { ascending: false });
         if (error) console.error('Ошибка обновления осмотров:', error.message);
         else if (active && currentRequest === requestId) onUpdate(data || []);
       } finally {
