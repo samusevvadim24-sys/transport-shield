@@ -124,12 +124,12 @@ export const DriverDashboardService = {
   },
 
   async createInspection(driverDbId: number) {
-    const { data: driver, error: driverError } = await supabase.from('drivers').select('inspection_scope,inspection_point_id').eq('id', driverDbId).single();
+    const { data: driver, error: driverError } = await supabase.from('drivers').select('inspection_scope').eq('id', driverDbId).single();
     if (driverError) throw new Error(driverError.message);
     const scope = driver?.inspection_scope || 'both';
     const newInspection: Record<string, any> = {
       driver_id: driverDbId,
-      inspection_point_id: driver?.inspection_point_id ?? null,
+      inspection_point_id: null,
       requested_at: new Date().toISOString(),
       overall_status: 'Ожидание',
     };
