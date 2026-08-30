@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
+import { hashPassword } from "./auth.service";
 import type { Driver, DriverFormData, CustomerOption } from "@/types/database.types";
 
 export const DRIVERS_PAGE_SIZE = 10;
@@ -93,12 +94,15 @@ export async function createDriver(formData: DriverFormData) {
       return { data: null, error: { message: "Пароль обязателен." } };
     }
 
+    // Хешируем пароль перед сохранением
+    const hashedPassword = await hashPassword(formData.password);
+
     // Создаем пользователя
     const { data: userData, error: userError } = await supabase
       .from("users")
       .insert({
         login: formData.login,
-        password: formData.password,
+        password: hashedPassword,
         role: "driver",
       })
       .select()
@@ -148,7 +152,8 @@ export async function updateDriver(
     if (userId) {
       const userUpdates: Record<string, any> = { login: formData.login };
       if (formData.password && formData.password.trim() !== "") {
-        userUpdates.password = formData.password;
+        // Хешируем новый пароль перед сохранением
+        userUpdates.password = await hashPassword(formData.password);
       }
 
       const { error: userError } = await supabase
