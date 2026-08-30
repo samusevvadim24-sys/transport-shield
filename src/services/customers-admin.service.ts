@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { hashPassword } from "./auth.service";
 import { DatabaseCustomer } from "../types/database.types";
 
 export const CUSTOMERS_PAGE_SIZE = 10;
@@ -68,7 +69,7 @@ export async function fetchCustomers({
  * Она:
  * 1. Создаёт запись в users.
  * 2. login = number.
- * 3. password = number.
+ * 3. password = number (хеш создаётся на уровне RPC или в этой функции).
  * 4. role = customer.
  * 5. Получает users.id.
  * 6. Создаёт customers с user_id.
@@ -99,9 +100,14 @@ export async function createCustomer(
     };
   }
 
+  // Хешируем пароль (по умолчанию = номер заказчика)
+  const passwordToHash = String(newCustomer.number).trim();
+  const hashedPassword = await hashPassword(passwordToHash);
+
   const { data, error } = await supabase.rpc("create_customer_with_user", {
     p_number: newCustomer.number,
     p_name: newCustomer.name,
+    p_password: hashedPassword,
 
     p_type: newCustomer.type ?? null,
     p_unp: newCustomer.unp ?? null,
@@ -186,7 +192,7 @@ export async function updateCustomer(
  * Удаление заказчика.
  *
  * RPC create_customer_with_user при создании заказчика заводит
- * связанного пользователя (login = number, пароль = number).
+ * связанного пользователя (login = number, пароль = хеш number).
  * На практике удаление строки из "customers" не приводит к
  * автоматическому удалению соответствующей записи в "users"
  * (даже если предполагался каскад/триггер на уровне БД — он не
