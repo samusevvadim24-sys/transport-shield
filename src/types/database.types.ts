@@ -4,10 +4,10 @@ export type InspectionScope = 'medical' | 'mechanic' | 'both';
 export interface User { id:number; login:string; role:UserRole; inspection_point_id?:number|null; }
 export interface UserSession { id:number; login:string; role:UserRole; inspection_point_id?:number|null; }
 export interface CustomerOption { id:number; name:string; number?:string|null; }
-export interface InspectionPoint { id:number; name:string; address:string; medic_last_name:string; mechanic_last_name:string; medical_inspection_price:number; mechanic_inspection_price:number; }
+export interface InspectionPoint { id:number; name:string; address:string; medic_surname:string; mechanic_surname:string; medical_exam_price:number; mechanic_exam_price:number; }
 
 export interface DriverFormData { name:string; car_brand:string; car_number:string; customer_id:string|number; login:string; password?:string; driver_id:string; insurance_expiry:string|null; license_expiry:string|null; license_number:string; medical_expiry:string|null; tech_inspection_expiry:string|null; inspection_scope:InspectionScope; is_blacklisted?:boolean; }
-export interface Driver { id:number; car_brand:string; car_number:string|null; customer_id:number; user_id:number|null; driver_id:string|null; name:string|null; insurance_expiry:string|null; license_expiry:string|null; license_number:string|null; medical_expiry:string|null; tech_inspection_expiry:string|null; inspection_scope:InspectionScope; is_blacklisted:boolean; inspection_point_id?:number|null; customer?:{id:number;name:string;number?:string|null}|null; user?:{id:number;login:string;role:string}|null; }
+export interface Driver { id:number; car_brand:string; car_number:string|null; customer_id:number; user_id:number|null; driver_id:string|null; name:string|null; insurance_expiry:string|null; license_number:string|null; medical_expiry:string|null; tech_inspection_expiry:string|null; inspection_scope:InspectionScope; is_blacklisted:boolean; inspection_point_id?:number|null; customer?:{id:number;name:string;number?:string|null}|null; user?:{id:number;login:string;role:string}|null; }
 export interface DriverResult { driver:Driver|null; error:Error|null; }
 export interface FetchDriversParams { currentPage:number; search?:string; }
 export type InspectionStatus = "Допущен"|"Не допущен"|"Ожидание"|"Явиться"|string;
