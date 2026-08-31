@@ -114,19 +114,14 @@ export async function updateCustomer(id: number, updates: Partial<DatabaseCustom
   return { data: data as DatabaseCustomer, error: null };
 }
 
-export async function deleteCustomerRecord(id: number, userId?: number | null) {
-  const { error: customerError } = await supabase.from("customers").delete().eq("id", id);
-  if (customerError) {
-    console.error("Ошибка при удалении заказчика:", customerError);
-    return { error: customerError };
-  }
+export async function deleteCustomerRecord(id: number) {
+  const { error } = await supabase.rpc("delete_customer_with_user", {
+    p_customer_id: id,
+  });
 
-  if (userId) {
-    const { error: userError } = await supabase.from("users").delete().eq("id", userId);
-    if (userError) {
-      console.error("Ошибка при удалении связанного пользователя:", userError);
-      return { error: userError };
-    }
+  if (error) {
+    console.error("Ошибка при удалении заказчика:", error);
+    return { error };
   }
 
   return { error: null };
