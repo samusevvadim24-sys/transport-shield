@@ -3,7 +3,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Search, Plus, Edit, Trash2, Mail, X, ChevronLeft, ChevronRight, FileText, Wallet } from "lucide-react";
+import { Search, Plus, Edit, Trash2, Mail, X, FileText, Wallet } from "lucide-react";
 import { DatabaseCustomer } from "../../../../types/database.types";
 import { fetchCustomers, deleteCustomerRecord, createCustomer, updateCustomer, CUSTOMERS_PAGE_SIZE } from "../../../../services/customers-admin.service";
 import CustomerModal from "../components/ui/CustomerEditModal";
@@ -163,81 +163,89 @@ export default function CustomersTab() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {customers.map((cust) => (
-                    <tr key={cust.id} className="align-middle transition-colors hover:bg-slate-50/60">
-                      <td className="px-4 py-4"><div className="flex items-start gap-2.5"><span className="inline-flex shrink-0 items-center justify-center rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-700 shadow-sm">{cust.number ? `№${cust.number}` : "—"}</span><div className="min-w-0"><div className="font-semibold text-slate-900">{cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}<span className="cursor-pointer select-none" title="Открыть историю списаний">{cust.name}</span></div>{cust.address && <div className="mt-0.5 line-clamp-1 text-xs text-slate-500">{cust.address}</div>}</div></div></td>
-                      <td className="px-4 py-4 font-mono text-xs text-slate-700">{cust.unp || "—"}</td>
-                      <td className="px-4 py-4 text-xs">{cust.contract_number ? <><div className="font-medium text-slate-800">№ {cust.contract_number}</div>{cust.contract_date && <div className="text-[10px] text-slate-400">от {cust.contract_date}</div>}</> : <span className="text-slate-400">—</span>}</td>
-                      <td className="px-4 py-4"><div className="flex items-center gap-2"><div><div className="font-semibold text-slate-900">{Number(cust.balance || 0).toFixed(2)} BYN</div><div className="text-[10px] text-slate-400">текущий баланс</div></div><button type="button" onClick={() => openBalance(cust)} title="Пополнить баланс" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"><Wallet size={15} /></button></div></td>
-                      <td className="px-4 py-4 text-xs">{cust.contact_person && <div className="font-medium text-slate-800">{cust.contact_person}</div>}{cust.phone && <div className="text-slate-600">{cust.phone}</div>}{cust.email && <div className="mt-0.5 flex items-center gap-1 text-slate-400"><Mail size={12} /><span className="max-w-[150px] truncate">{cust.email}</span></div>}</td>
-                      <td className="px-4 py-4"><div className="flex w-full flex-col items-center justify-center gap-1.5"><button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"><FileText size={14} className="shrink-0 text-slate-500" />Договор</button><button type="button" onClick={() => openBalance(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100"><Wallet size={14} className="shrink-0 text-emerald-600" />Пополнить</button><button type="button" onClick={() => openEdit(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-2 py-1.5 text-xs font-medium text-sky-800 shadow-sm transition-colors hover:bg-sky-100"><Edit size={14} className="shrink-0 text-sky-600" />Изменить</button><button type="button" onClick={() => openDelete(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#C53030]/20 bg-[#C53030]/5 px-2 py-1.5 text-xs font-medium text-[#C53030] shadow-sm transition-colors hover:bg-[#C53030]/10"><Trash2 size={14} className="shrink-0" />Удалить</button></div></td>
-                    </tr>
-                  ))}
+                  {customers.map((cust) => {
+                    const balance = Number(cust.balance ?? 0);
+                    const balanceClassName = balance < 0 ? "text-red-600" : "text-slate-900";
+                    return (
+                      <tr key={cust.id} className="align-middle transition-colors hover:bg-slate-50/60">
+                        <td className="px-4 py-4"><div className="flex items-start gap-2.5"><span className="inline-flex shrink-0 items-center justify-center rounded-md bg-slate-100 px-2 py-1 font-mono text-xs font-semibold text-slate-700 shadow-sm">{cust.number ? `№${cust.number}` : "—"}</span><div className="min-w-0"><div className="font-semibold text-slate-900">{cust.type && <span className="mr-1 font-normal text-slate-500">{cust.type}</span>}<span className="cursor-pointer select-none" title="Открыть историю списаний">{cust.name}</span></div>{cust.address && <div className="mt-0.5 line-clamp-1 text-xs text-slate-500">{cust.address}</div>}</div></div></td>
+                        <td className="px-4 py-4 font-mono text-xs text-slate-700">{cust.unp || "—"}</td>
+                        <td className="px-4 py-4 text-xs">{cust.contract_number ? <><div className="font-medium text-slate-800">№ {cust.contract_number}</div>{cust.contract_date && <div className="text-[10px] text-slate-400">от {cust.contract_date}</div>}</> : <span className="text-slate-400">—</span>}</td>
+                        <td className="px-4 py-4"><div className="flex items-center gap-2"><div><div className={`font-semibold ${balanceClassName}`}>{balance.toFixed(2)} BYN</div><div className="text-[10px] text-slate-400">текущий баланс</div></div><button type="button" onClick={() => openBalance(cust)} title="Пополнить баланс" className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 transition-colors hover:bg-emerald-100"><Wallet size={15} /></button></div></td>
+                        <td className="px-4 py-4 text-xs">{cust.contact_person && <div className="font-medium text-slate-800">{cust.contact_person}</div>}{cust.phone && <div className="text-slate-600">{cust.phone}</div>}{cust.email && <div className="mt-0.5 flex items-center gap-1 text-slate-400"><Mail size={12} /><span className="max-w-[150px] truncate">{cust.email}</span></div>}</td>
+                        <td className="px-4 py-4"><div className="flex w-full flex-col items-center justify-center gap-1.5"><button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50"><FileText size={14} className="shrink-0 text-slate-500" />Договор</button><button type="button" onClick={() => openBalance(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-xs font-medium text-emerald-800 shadow-sm transition-colors hover:bg-emerald-100"><Wallet size={14} className="shrink-0 text-emerald-600" />Пополнить</button><button type="button" onClick={() => openEdit(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-sky-300 bg-sky-50 px-2 py-1.5 text-xs font-medium text-sky-800 shadow-sm transition-colors hover:bg-sky-100"><Edit size={14} className="shrink-0 text-sky-600" />Изменить</button><button type="button" onClick={() => openDelete(cust)} className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-[#C53030]/20 bg-[#C53030]/5 px-2 py-1.5 text-xs font-medium text-[#C53030] shadow-sm transition-colors hover:bg-[#C53030]/10"><Trash2 size={14} className="shrink-0" />Удалить</button></div></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
 
           <div className="grid gap-3 sm:hidden">
-            {customers.map((cust) => (
-              <article key={cust.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow active:shadow-md">
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                        {cust.number && <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] font-semibold text-slate-600">№{cust.number}</span>}
-                        {cust.type && <span className="rounded-md bg-[#042433]/5 px-2 py-1 text-[10px] font-medium text-[#042433]">{cust.type}</span>}
-                      </div>
-                      <h3 className="break-words text-base font-bold leading-5 text-slate-900">{cust.name}</h3>
-                      {cust.address && <p className="mt-1.5 break-words text-xs leading-4 text-slate-500">{cust.address}</p>}
-                    </div>
-                    <div className="shrink-0 rounded-xl bg-slate-50 p-2 text-slate-400"><FileText size={17} /></div>
-                  </div>
-
-                  <div className="my-4 h-px bg-slate-100" />
-
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                    <div className="min-w-0">
-                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">УНП</div>
-                      <div className="truncate font-mono text-xs font-medium text-slate-700">{cust.unp || "—"}</div>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Договор</div>
-                      {cust.contract_number ? (
-                        <div className="text-xs font-medium text-slate-700">
-                          № {cust.contract_number}
-                          {cust.contract_date && <span className="ml-1 text-[10px] font-normal text-slate-400">от {cust.contract_date}</span>}
+            {customers.map((cust) => {
+              const balance = Number(cust.balance ?? 0);
+              const balanceClassName = balance < 0 ? "text-red-600" : "text-emerald-900";
+              return (
+                <article key={cust.id} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow active:shadow-md">
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                          {cust.number && <span className="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 font-mono text-[10px] font-semibold text-slate-600">№{cust.number}</span>}
+                          {cust.type && <span className="rounded-md bg-[#042433]/5 px-2 py-1 text-[10px] font-medium text-[#042433]">{cust.type}</span>}
                         </div>
-                      ) : (
-                        <div className="text-xs text-slate-400">Не указан</div>
-                      )}
+                        <h3 className="break-words text-base font-bold leading-5 text-slate-900">{cust.name}</h3>
+                        {cust.address && <p className="mt-1.5 break-words text-xs leading-4 text-slate-500">{cust.address}</p>}
+                      </div>
+                      <div className="shrink-0 rounded-xl bg-slate-50 p-2 text-slate-400"><FileText size={17} /></div>
                     </div>
+
+                    <div className="my-4 h-px bg-slate-100" />
+
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                      <div className="min-w-0">
+                        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">УНП</div>
+                        <div className="truncate font-mono text-xs font-medium text-slate-700">{cust.unp || "—"}</div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Договор</div>
+                        {cust.contract_number ? (
+                          <div className="text-xs font-medium text-slate-700">
+                            № {cust.contract_number}
+                            {cust.contract_date && <span className="ml-1 text-[10px] font-normal text-slate-400">от {cust.contract_date}</span>}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-slate-400">Не указан</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50/70 p-3">
+                      <div>
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/60">Баланс</div>
+                        <div className={`mt-0.5 text-sm font-bold ${balanceClassName}`}>{balance.toFixed(2)} BYN</div>
+                      </div>
+                      <button type="button" onClick={() => openBalance(cust)} className="flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"><Wallet size={14} />Пополнить</button>
+                    </div>
+
+                    {(cust.contact_person || cust.phone || cust.email) && (
+                      <div className="mt-4 rounded-xl bg-slate-50/80 p-3">
+                        <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Контакты</div>
+                        {cust.contact_person && <div className="text-xs font-semibold text-slate-800">{cust.contact_person}</div>}
+                        {cust.phone && <a href={`tel:${cust.phone}`} className="mt-1 block text-xs text-slate-600">{cust.phone}</a>}
+                        {cust.email && <a href={`mailto:${cust.email}`} className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500"><Mail size={13} className="shrink-0" /><span className="truncate">{cust.email}</span></a>}
+                      </div>
+                    )}
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between rounded-xl bg-emerald-50/70 p-3">
-                    <div>
-                      <div className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/60">Баланс</div>
-                      <div className="mt-0.5 text-sm font-bold text-emerald-900">{Number(cust.balance || 0).toFixed(2)} BYN</div>
-                    </div>
-                    <button type="button" onClick={() => openBalance(cust)} className="flex min-h-9 items-center gap-1.5 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700"><Wallet size={14} />Пополнить</button>
+                  <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50/50 p-3">
+                    <button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors active:bg-slate-50"><FileText size={14} />Договор</button>
+                    <button type="button" onClick={() => openEdit(cust)} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-2 text-[11px] font-semibold text-sky-800 shadow-sm transition-colors active:bg-sky-100"><Edit size={14} className="text-sky-600" />Изменить</button>
                   </div>
-
-                  {(cust.contact_person || cust.phone || cust.email) && (
-                    <div className="mt-4 rounded-xl bg-slate-50/80 p-3">
-                      <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Контакты</div>
-                      {cust.contact_person && <div className="text-xs font-semibold text-slate-800">{cust.contact_person}</div>}
-                      {cust.phone && <a href={`tel:${cust.phone}`} className="mt-1 block text-xs text-slate-600">{cust.phone}</a>}
-                      {cust.email && <a href={`mailto:${cust.email}`} className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-slate-500"><Mail size={13} className="shrink-0" /><span className="truncate">{cust.email}</span></a>}
-                    </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 bg-slate-50/50 p-3">
-                  <button type="button" onClick={() => window.open(`/dashboard/admin/customers/${cust.id}/contract`, "_blank")} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-700 shadow-sm transition-colors active:bg-slate-50"><FileText size={14} />Договор</button>
-                  <button type="button" onClick={() => openEdit(cust)} className="flex min-h-10 cursor-pointer items-center justify-center gap-1 rounded-xl border border-sky-200 bg-sky-50 px-2 text-[11px] font-semibold text-sky-800 shadow-sm transition-colors active:bg-sky-100"><Edit size={14} className="text-sky-600" />Изменить</button>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </>
       )}
