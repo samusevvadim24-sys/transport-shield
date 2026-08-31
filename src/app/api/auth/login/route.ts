@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
 import { createHmac } from 'node:crypto';
 import { NextResponse } from 'next/server';
 
@@ -8,7 +9,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 8;
 type UserRow = {
   id: number;
   login: string;
-  password: string;
+  password_hash: string | null;
   role: 'admin' | 'customer' | 'driver';
   inspection_point_id?: number | null;
 };
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     const { data: user, error } = await supabase
       .from('users')
-      .select('id, login, password, role, inspection_point_id')
+      .select('id, login, password_hash, role, inspection_point_id')
       .eq('login', login)
       .maybeSingle<UserRow>();
 
@@ -58,7 +59,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Ошибка соединения с базой данных' }, { status: 500 });
     }
 
-    if (!user || user.password !== password) {
+    if (!user || !user.password_hash) {
+      return NextResponse.json({ error: 'Неверный логин или пароль' }, { status: 401 });
+    }
+
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatches) {
       return NextResponse.json({ error: 'Неверный логин или пароль' }, { status: 401 });
     }
 
