@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { AuthService } from "@/services/auth.service";
 import type { Driver, DriverFormData, CustomerOption } from "@/types/database.types";
@@ -9,7 +10,6 @@ function toError(error: unknown): Error { if (error instanceof Error) return err
 function escapeForOrFilter(value: string): string { return value.replace(/[,.:()]/g, "\\$&"); }
 function toDateValue(value: unknown): string | null { const text = String(value ?? "").trim(); if (!text) return null; const match = text.match(/^(\d{2})\.(\d{2})\.(\d{4})$/); return match ? `${match[3]}-${match[2]}-${match[1]}` : text; }
 
-/** The driver registry is global. An inspection point is selected only when an inspection is processed. */
 export async function fetchDrivers({ currentPage, search = "" }: FetchDriversParams) {
   const from = (currentPage - 1) * DRIVERS_PAGE_SIZE; const to = from + DRIVERS_PAGE_SIZE - 1;
   let query = supabase.from("drivers").select(`*, user:users!drivers_userId_fkey (*), customer:customers (*)`, { count: "exact" });
@@ -50,12 +50,14 @@ export async function getNextDriverNumber(customerId: string | number): Promise<
 export async function createDriver(formData: DriverFormData) {
   try {
     if (!String(formData.name ?? "").trim()) return { data: null, error: { message: "ФИО водителя обязательно." } };
-    if (!String(formData.password ?? "").trim()) return { data: null, error: { message: "Пароль обязателен." } };
+    const rawPassword = String(formData.password ?? "");
+    if (!rawPassword.trim()) return { data: null, error: { message: "Пароль обязателен." } };
     const nextNumber = await getNextDriverNumber(formData.customer_id);
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
     const session = AuthService.getSession();
     if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
-    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", { p_admin_id: Number(session.id), p_login: nextNumber.number, p_password: String(formData.password).trim() });
+    const passwordHash = await bcrypt.hash(rawPassword, 12);
+    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", { p_admin_id: Number(session.id), p_login: nextNumber.number, p_password: passwordHash });
     if (userError) return { data: null, error: userError };
     if (!userData) return { data: null, error: { message: "Не удалось создать пользователя водителя." } };
     const { data: driverData, error: driverError } = await supabase.rpc("create_driver_record", {
@@ -66,7 +68,6 @@ export async function createDriver(formData: DriverFormData) {
     if (!driverData) { await supabase.from("users").delete().eq("id", Number(userData.id)); return { data: null, error: { message: "Не удалось создать запись водителя." } }; }
     const createdDriverId = Number((driverData as any).id);
     if (Number.isFinite(createdDriverId)) {
-      // Driver is not tied to an inspection point. The point is chosen per inspection by the admin who processes it.
       const { error: scopeError } = await supabase.from("drivers").update({ inspection_scope: formData.inspection_scope || "both" }).eq("id", createdDriverId);
       if (scopeError) return { data: null, error: scopeError };
       if (formData.is_blacklisted !== undefined) {
@@ -82,8 +83,11 @@ export async function updateDriver(id: string | number, formData: DriverFormData
   try {
     const session = AuthService.getSession();
     if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+    let passwordHash: string | null = null;
+    const rawPassword = String(formData.password ?? "");
+    if (rawPassword.trim()) passwordHash = await bcrypt.hash(rawPassword, 12);
     const { data, error } = await supabase.rpc("update_driver_record", {
-      p_admin_id: Number(session.id), p_driver_id: Number(id), p_name: String(formData.name ?? "").trim(), p_car_brand: String(formData.car_brand ?? "").trim(), p_car_number: String(formData.car_number ?? "").trim(), p_customer_id: Number(formData.customer_id), p_driver_code: String(formData.driver_id ?? "").trim(), p_insurance_expiry: toDateValue(formData.insurance_expiry), p_license_expiry: toDateValue(formData.license_expiry), p_license_number: String(formData.license_number ?? "").trim(), p_medical_expiry: toDateValue(formData.medical_expiry), p_tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry), p_inspection_scope: formData.inspection_scope || "both", p_login: String(formData.login ?? formData.driver_id ?? "").trim(), p_password: formData.password?.trim() || null
+      p_admin_id: Number(session.id), p_driver_id: Number(id), p_name: String(formData.name ?? "").trim(), p_car_brand: String(formData.car_brand ?? "").trim(), p_car_number: String(formData.car_number ?? "").trim(), p_customer_id: Number(formData.customer_id), p_driver_code: String(formData.driver_id ?? "").trim(), p_insurance_expiry: toDateValue(formData.insurance_expiry), p_license_expiry: toDateValue(formData.license_expiry), p_license_number: String(formData.license_number ?? "").trim(), p_medical_expiry: toDateValue(formData.medical_expiry), p_tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry), p_inspection_scope: formData.inspection_scope || "both", p_login: String(formData.login ?? formData.driver_id ?? "").trim(), p_password: passwordHash
     });
     if (error) return { data: null, error };
     if (!data) return { data: null, error: { message: "Сервер не вернул обновлённую запись водителя." } };
