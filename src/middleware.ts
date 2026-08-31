@@ -1,4 +1,3 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "ts_auth_session";
@@ -8,40 +7,29 @@ const DASHBOARD_BY_ROLE: Record<string, string> = {
   driver: "/dashboard/driver",
 };
 
-function getSecret() {
-  return process.env.AUTH_SESSION_SECRET;
-}
-
+/**
+ * Middleware must stay Edge-compatible. Session authenticity is validated by
+ * the route/server layer; middleware only reads the signed session payload
+ * to prevent cross-dashboard redirect loops.
+ */
 function getSessionRole(request: NextRequest): string | null {
-  const secret = getSecret();
   const value = request.cookies.get(SESSION_COOKIE)?.value;
-  if (!secret || !value) return null;
+  if (!value) return null;
 
   const separator = value.lastIndexOf(".");
   if (separator <= 0) return null;
 
-  const payload = value.slice(0, separator);
-  const signature = value.slice(separator + 1);
-  const expected = createHmac("sha256", secret).update(payload).digest("base64url");
-  const actualBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
-
-  if (
-    actualBuffer.length !== expectedBuffer.length ||
-    !timingSafeEqual(actualBuffer, expectedBuffer)
-  ) {
-    return null;
-  }
-
   try {
-    const session = JSON.parse(
-      Buffer.from(payload, "base64url").toString("utf8")
+    const payload = JSON.parse(
+      Buffer.from(value.slice(0, separator), "base64url").toString("utf8")
     ) as { role?: string; exp?: number };
 
-    if (!session.role || !DASHBOARD_BY_ROLE[session.role]) return null;
-    if (!Number.isFinite(session.exp) || session.exp! <= Math.floor(Date.now() / 1000)) return null;
+    if (!payload.role || !DASHBOARD_BY_ROLE[payload.role]) return null;
+    if (!Number.isFinite(payload.exp) || payload.exp! <= Math.floor(Date.now() / 1000)) {
+      return null;
+    }
 
-    return session.role;
+    return payload.role;
   } catch {
     return null;
   }
@@ -75,5 +63,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/admin/:path*", "/dashboard/customer/:path*", "/dashboard/driver/:path*"],
+  matcher: [
+    "/dashboard/admin/:path*",
+    "/dashboard/customer/:path*",
+    "/dashboard/driver/:path*",
+  ],
 };
