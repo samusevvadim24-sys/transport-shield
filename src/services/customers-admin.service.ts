@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { DatabaseCustomer } from "../types/database.types";
 
@@ -58,9 +59,14 @@ export async function createCustomer(newCustomer: Omit<DatabaseCustomer, "id" | 
     return { data: null, error: { message: `Заказчик с номером ${number} уже существует.` } };
   }
 
+  // Новый заказчик получает пароль, равный номеру.
+  // В Supabase передаём только bcrypt hash.
+  const passwordHash = await bcrypt.hash(number, 12);
+
   const { data, error } = await supabase.rpc("create_customer_with_user", {
     p_number: number,
     p_name: name,
+    p_password_hash: passwordHash,
     p_type: newCustomer.type ?? null,
     p_unp: newCustomer.unp ?? null,
     p_address: newCustomer.address ?? null,
