@@ -59,6 +59,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "medical") {
+      const pointId = session.inspection_point_id ?? null;
+      if (!pointId) return NextResponse.json({ error: "У администратора не назначен пункт осмотра" }, { status: 400 });
+      const { data: point, error: pointError } = await sb.from("inspection_points").select("medic_surname").eq("id", pointId).maybeSingle();
+      if (pointError) throw pointError;
+      if (!point) return NextResponse.json({ error: "Пункт осмотра не найден" }, { status: 404 });
+      const ex = await examiner(sb, point.medic_surname);
+
       if (current.inspection_scope === "mechanic") {
         const { error } = await sb.from("inspections").update({ medical_status:"Не требуется" }).eq("id", id);
         if (error) throw error;
@@ -69,7 +76,7 @@ export async function POST(request: Request) {
       const diastolic = body?.diastolic == null ? null : Number(body.diastolic);
       const drug = body?.drugIntoxication === true;
       const ok = alcohol === 0 && !drug && BP_OK(systolic, diastolic);
-      const { error } = await sb.from("inspections").update({ medical_status:ok?"Допущен":"Не допущен", medical_date:body?.now || new Date().toISOString(), breathalyzer_value:alcohol, blood_pressure_systolic:systolic, blood_pressure_diastolic:diastolic, drug_intoxication:drug, medical_examiner_id:session.id, medical_examiner_name:session.login }).eq("id", id);
+      const { error } = await sb.from("inspections").update({ medical_status:ok?"Допущен":"Не допущен", medical_date:body?.now || new Date().toISOString(), breathalyzer_value:alcohol, blood_pressure_systolic:systolic, blood_pressure_diastolic:diastolic, drug_intoxication:drug, medical_examiner_id:ex.id, medical_examiner_name:ex.name }).eq("id", id);
       if (error) throw error;
       return NextResponse.json({ ok: true });
     }
