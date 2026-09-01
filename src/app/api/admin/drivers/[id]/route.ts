@@ -124,24 +124,19 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     }
 
     const db = getServerSupabase();
-    const { data: driver, error: lookupError } = await db
-      .from("drivers")
-      .select("id,user_id")
-      .eq("id", id)
-      .maybeSingle();
+    const { error } = await db.rpc("delete_driver_and_user", {
+      p_admin_id: Number(session.id),
+      p_driver_id: id,
+    });
 
-    if (lookupError) throw lookupError;
-    if (!driver) return NextResponse.json({ error: "Водитель не найден" }, { status: 404 });
-
-    const { error: deleteError } = await db.from("drivers").delete().eq("id", id);
-    if (deleteError) throw deleteError;
-
-    if (driver.user_id != null) {
-      const { error: userDeleteError } = await db
-        .from("users")
-        .delete()
-        .eq("id", Number(driver.user_id));
-      if (userDeleteError) throw userDeleteError;
+    if (error) {
+      if (error.message === "Водитель не найден") {
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+      if (error.message === "Недостаточно прав для удаления водителя") {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+      throw error;
     }
 
     return NextResponse.json({ ok: true });
