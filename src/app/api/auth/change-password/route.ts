@@ -31,10 +31,6 @@ export async function POST(request: Request) {
     }
 
     const db = getServerSupabase();
-
-    // Не полагаемся на session.id как на идентификатор строки users.
-    // Сессию создаём из users.id, но RPC/старые данные могли вернуть иной id.
-    // login + role являются стабильной связкой из текущей авторизованной сессии.
     const { data: user, error: readError } = await db
       .from('users')
       .select('id,login,password_hash,role')
@@ -61,7 +57,7 @@ export async function POST(request: Request) {
     const passwordHash = await bcrypt.hash(newPassword, 12);
     const { error: updateError } = await db
       .from('users')
-      .update({ password_hash: passwordHash, password: null })
+      .update({ password_hash: passwordHash })
       .eq('id', user.id)
       .eq('role', session.role);
 
