@@ -1,32 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
-import { createHmac } from 'node:crypto';
 import { NextResponse } from 'next/server';
+import {
+  createServerSession,
+  createSessionToken,
+  SESSION_COOKIE,
+  SESSION_TTL_SECONDS,
+} from '@/lib/auth-session';
 
-const SESSION_COOKIE = 'ts_auth_session';
-const SESSION_TTL_SECONDS = 60 * 60 * 8;
-
-type UserRow = {
+ type UserRow = {
   id: number;
   login: string;
   password_hash: string | null;
   role: 'admin' | 'customer' | 'driver';
   inspection_point_id?: number | null;
 };
-
-function getSecret() {
-  const secret = process.env.AUTH_SESSION_SECRET;
-  if (!secret) throw new Error('AUTH_SESSION_SECRET is not configured');
-  return secret;
-}
-
-function encode(value: string) {
-  return Buffer.from(value, 'utf8').toString('base64url');
-}
-
-function sign(payload: string) {
-  return createHmac('sha256', getSecret()).update(payload).digest('base64url');
-}
 
 export async function POST(request: Request) {
   try {
@@ -72,15 +60,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Для пользователя не настроена роль' }, { status: 403 });
     }
 
-    const payload = encode(JSON.stringify({
-      id: user.id,
-      login: user.login,
-      role: user.role,
-      inspection_point_id: user.inspection_point_id ?? null,
-      exp: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
-    }));
+    const token = createSessionToken();
+    const expiresAt = new Date(Date.now() + SESSION_TTL_SECONDS * 1000);
+    await createServerSession(user.id, token, expiresAt);
 
-    const value = `${payload}.${sign(payload)}`;
     const response = NextResponse.json({
       session: {
         id: user.id,
@@ -90,7 +73,7 @@ export async function POST(request: Request) {
       },
     });
 
-    response.cookies.set(SESSION_COOKIE, value, {
+    response.cookies.set(SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

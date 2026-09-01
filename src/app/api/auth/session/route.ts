@@ -3,7 +3,7 @@ import { getSessionFromRequest, SESSION_COOKIE } from '@/lib/auth-session';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = getSessionFromRequest(request);
+    const session = await getSessionFromRequest(request);
 
     if (!session) {
       const response = NextResponse.json({ authenticated: false }, { status: 401 });
