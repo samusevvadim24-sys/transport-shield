@@ -45,13 +45,6 @@ async function currentAdminSession() {
   return session;
 }
 
-async function currentAdminId() {
-  const session = await currentAdminSession();
-  if (!session) return null;
-  const id = Number(session.id);
-  return Number.isFinite(id) ? id : null;
-}
-
 export async function fetchInspectionPoints(): Promise<InspectionPoint[]> {
   const { data, error } = await supabase
     .from("inspection_points")
@@ -70,8 +63,6 @@ export async function fetchInspectionPoints(): Promise<InspectionPoint[]> {
 }
 
 export async function fetchAdminInspectionPointId() {
-  // The authenticated session is the source of truth. This avoids a second
-  // client-side users query which can be blocked by RLS and return null.
   const session = await currentAdminSession();
   if (!session) return null;
   const pointId = Number(session.inspection_point_id);
@@ -79,19 +70,16 @@ export async function fetchAdminInspectionPointId() {
 }
 
 export async function updateAdminInspectionPoint(pointId: number) {
-  const id = await currentAdminId();
-  if (!id) return { error: new Error("Сессия администратора не найдена") };
   if (!Number.isFinite(pointId) || pointId <= 0) return { error: new Error("Некорректный пункт осмотра") };
-
-  const { data, error } = await supabase
-    .from("users")
-    .update({ inspection_point_id: pointId })
-    .eq("id", id)
-    .eq("role", "admin")
-    .select("id,inspection_point_id")
-    .maybeSingle();
-  if (error) return { error };
-  if (!data) return { error: new Error("Не удалось назначить пункт осмотра администратору") };
+  const response = await fetch("/api/admin/inspection-points", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ pointId }),
+  });
+  let body: { error?: string } = {};
+  try { body = await response.json(); } catch { /* ignore invalid response */ }
+  if (!response.ok) return { error: new Error(body.error || "Не удалось назначить пункт осмотра") };
   return { error: null };
 }
 
@@ -100,16 +88,12 @@ export async function fetchSystemSettings(pointId?: number | null): Promise<Syst
   if (!resolved) return { ...EMPTY };
 
   const [{ data: org, error: orgError }, { data: point, error: pointError }] = await Promise.all([
-    supabase
-      .from("system_settings")
+    supabase.from("system_settings")
       .select("id,organization_name,organization_address,organization_bank_account,organization_unp,organization_phone,organization_email,director_name")
-      .eq("id", 1)
-      .maybeSingle(),
-    supabase
-      .from("inspection_points")
+      .eq("id", 1).maybeSingle(),
+    supabase.from("inspection_points")
       .select("id,name,address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price")
-      .eq("id", resolved)
-      .maybeSingle(),
+      .eq("id", resolved).maybeSingle(),
   ]);
 
   if (orgError) throw orgError;
@@ -135,52 +119,46 @@ export async function fetchSystemSettings(pointId?: number | null): Promise<Syst
   };
 }
 
-export async function updateInspectionPointSettings(
-  pointId: number,
-  values: {
-    name?: string;
-    address: string;
-    medic_surname: string;
-    mechanic_surname: string;
-    medical_exam_price: number;
-    mechanic_exam_price: number;
-  },
-) {
+export async function updateInspectionPointSettings(pointId: number, values: {
+  name?: string;
+  address: string;
+  medic_surname: string;
+  mechanic_surname: string;
+  medical_exam_price: number;
+  mechanic_exam_price: number;
+}) {
   if (!Number.isFinite(pointId) || pointId <= 0) return { data: null, error: new Error("Некорректный пункт осмотра") };
-  const payload = {
-    ...(values.name?.trim() ? { name: values.name.trim() } : {}),
-    address: values.address.trim(),
-    medic_surname: values.medic_surname.trim(),
-    mechanic_surname: values.mechanic_surname.trim(),
-    medical_exam_price: Math.max(0, Number(values.medical_exam_price) || 0),
-    mechanic_exam_price: Math.max(0, Number(values.mechanic_exam_price) || 0),
-    updated_at: new Date().toISOString(),
-  };
-  const { data, error } = await supabase
-    .from("inspection_points")
-    .update(payload)
-    .eq("id", pointId)
-    .select("id,name,address,medic_surname,mechanic_surname,medical_exam_price,mechanic_exam_price")
-    .maybeSingle();
-  if (error) return { data: null, error };
-  if (!data) return { data: null, error: new Error("Настройки пункта не сохранены. Проверьте RLS/права UPDATE для inspection_points.") };
-  return { data, error: null };
+  const response = await fetch("/api/admin/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      pointId,
+      inspection_point_name: values.name ?? "",
+      inspection_point_address: values.address,
+      medic_surname: values.medic_surname,
+      mechanic_surname: values.mechanic_surname,
+      medical_exam_price: values.medical_exam_price,
+      mechanic_exam_price: values.mechanic_exam_price,
+    }),
+  });
+  let body: { error?: string; point?: unknown } = {};
+  try { body = await response.json(); } catch { /* ignore invalid response */ }
+  if (!response.ok) return { data: null, error: new Error(body.error || "Не удалось сохранить пункт осмотра") };
+  return { data: body.point ?? null, error: null };
 }
 
-export async function updateSystemSettings(
-  values: Pick<SystemSettings, "organization_name" | "organization_address" | "organization_bank_account" | "organization_unp" | "organization_phone" | "organization_email" | "organization_director_name">,
-) {
-  return supabase.from("system_settings").upsert({
-    id: 1,
-    organization_name: values.organization_name.trim(),
-    organization_address: values.organization_address.trim(),
-    organization_bank_account: values.organization_bank_account.trim(),
-    organization_unp: values.organization_unp.trim(),
-    organization_phone: values.organization_phone.trim(),
-    organization_email: values.organization_email.trim(),
-    director_name: values.organization_director_name.trim(),
-    updated_at: new Date().toISOString(),
+export async function updateSystemSettings(values: Pick<SystemSettings, "organization_name" | "organization_address" | "organization_bank_account" | "organization_unp" | "organization_phone" | "organization_email" | "organization_director_name">) {
+  const response = await fetch("/api/admin/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(values),
   });
+  let body: { error?: string } = {};
+  try { body = await response.json(); } catch { /* ignore invalid response */ }
+  if (!response.ok) return { error: new Error(body.error || "Не удалось сохранить реквизиты организации") };
+  return { error: null };
 }
 
 export async function updateAdminPassword(userId: number, currentPassword: string, newPassword: string) {
