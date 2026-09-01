@@ -4,7 +4,7 @@
 import { User, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthService } from "@/services/auth.service";
+import { AuthService, getDashboardPath } from "@/services/auth.service";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,21 +27,16 @@ export default function LoginPage() {
 
     try {
       const session = await AuthService.login(login, password);
+      const dashboardPath = getDashboardPath(session.role);
 
-      switch (session.role) {
-        case "driver":
-          router.push("/dashboard/driver");
-          break;
-        case "admin":
-          router.push("/dashboard/admin");
-          break;
-        case "customer":
-          router.push("/dashboard/customer");
-          break;
-        default:
-          router.push("/");
-          break;
+      if (!dashboardPath) {
+        throw new Error("Для пользователя не настроена роль");
       }
+
+      // Cookie ts_auth_session устанавливается сервером в ответе на login.
+      // Полная навигация гарантирует, что следующий запрос страницы dashboard
+      // будет выполнен уже с установленной HttpOnly cookie.
+      window.location.assign(dashboardPath);
     } catch (error) {
       if (error instanceof Error) {
         setErrorMessage(error.message);
@@ -122,8 +117,8 @@ export default function LoginPage() {
         </form>
 
         <div className="mt-6 text-center text-xs text-gray-400">
-  <p>© ООО &quot;Транспортный щит&quot; УНП: 193992564</p>
-</div>
+          <p>© ООО &quot;Транспортный щит&quot; УНП: 193992564</p>
+        </div>
       </div>
     </main>
   );
