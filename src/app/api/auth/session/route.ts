@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest, SESSION_COOKIE } from '@/lib/auth-session';
+import { getSessionFromRequest } from '@/lib/auth-session';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getSessionFromRequest(request);
 
     if (!session) {
-      const response = NextResponse.json({ authenticated: false }, { status: 401 });
-      response.cookies.delete(SESSION_COOKIE);
-      return response;
+      // Проверка сессии не должна удалять cookie: временная ошибка проверки
+      // или устаревший серверный ответ не должна превращаться в logout.
+      return NextResponse.json({ authenticated: false }, { status: 401 });
     }
 
     return NextResponse.json({
