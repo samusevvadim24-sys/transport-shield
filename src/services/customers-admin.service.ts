@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { DatabaseCustomer } from "../types/database.types";
 
@@ -37,18 +36,20 @@ export async function createCustomer(newCustomer: Omit<DatabaseCustomer, "id" | 
   const numberCheck = await checkCustomerNumber(number);
   if (numberCheck.error) return { data: null, error: numberCheck.error };
   if (numberCheck.exists) return { data: null, error: { message: `Заказчик с номером ${number} уже существует.` } };
-  const passwordHash = await bcrypt.hash(number, 12);
-  const { data, error } = await supabase.rpc("create_customer_with_user", {
-    p_number: number, p_name: name, p_password_hash: passwordHash, p_type: newCustomer.type ?? null,
-    p_unp: newCustomer.unp ?? null, p_address: newCustomer.address ?? null, p_phone: newCustomer.phone ?? null,
-    p_email: newCustomer.email ?? null, p_contact_person: newCustomer.contact_person ?? null,
-    p_bank_name: newCustomer.bank_name ?? null, p_bank_account: newCustomer.bank_account ?? null, p_bank_bic: newCustomer.bank_bic ?? null,
-    p_contract_number: newCustomer.contract_number ?? null, p_contract_date: newCustomer.contract_date ?? null,
-    p_registration_number: newCustomer.registration_number ?? null, p_registration_date: newCustomer.registration_date ?? null,
-    p_director_name: newCustomer.director_name ?? null,
-  });
-  if (error) return { data: null, error };
-  return { data: data as DatabaseCustomer, error: null };
+
+  try {
+    const response = await fetch("/api/admin/customers", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newCustomer),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return { data: null, error: { message: body.error || "Не удалось создать заказчика" } };
+    return { data: body.data as DatabaseCustomer, error: null };
+  } catch (error) {
+    return { data: null, error: { message: error instanceof Error ? error.message : String(error) } };
+  }
 }
 
 export async function updateCustomer(id: number, updates: Partial<DatabaseCustomer>) {
@@ -82,5 +83,6 @@ export async function topUpCustomerBalance(customerId: number, amount: number, d
     const body = await response.json().catch(() => ({}));
     if (!response.ok) return { balance: null, error: { message: body.error || "Не удалось пополнить баланс" } };
     return { balance: Number(body.balance), error: null };
-  } catch (error) { return { balance: null, error: { message: error instanceof Error ? error.message : String(error) } }; }
+  } catch (error) { return { balance: null, error: { message: error instanceof Error ? error.message : String(error) } };
+  }
 }
