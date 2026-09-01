@@ -22,9 +22,9 @@ export interface SystemSettings {
 
 const EMPTY: SystemSettings = { id: 1, inspection_point_id: null, inspection_point_name: "", inspection_point_address: "", medic_surname: "", mechanic_surname: "", medical_exam_price: 0.9, mechanic_exam_price: 0.9, organization_name: "", organization_address: "", organization_bank_account: "", organization_unp: "", organization_phone: "", organization_email: "", organization_director_name: "" };
 
-function currentAdminId() {
+async function currentAdminId() {
   if (typeof window === "undefined") return null;
-  const session = AuthService.getSession();
+  const session = await AuthService.getServerSession();
   if (!session || session.role !== "admin") return null;
   const id = Number(session.id);
   return Number.isFinite(id) ? id : null;
@@ -37,7 +37,7 @@ export async function fetchInspectionPoints(): Promise<InspectionPoint[]> {
 }
 
 export async function fetchAdminInspectionPointId() {
-  const id = currentAdminId();
+  const id = await currentAdminId();
   if (!id) return null;
   const { data, error } = await supabase.from("users").select("inspection_point_id").eq("id", id).eq("role", "admin").maybeSingle();
   if (error) throw error;
@@ -46,7 +46,7 @@ export async function fetchAdminInspectionPointId() {
 }
 
 export async function updateAdminInspectionPoint(pointId: number) {
-  const id = currentAdminId();
+  const id = await currentAdminId();
   if (!id) return { error: new Error("Сессия администратора не найдена") };
   if (!Number.isFinite(pointId) || pointId <= 0) return { error: new Error("Некорректный пункт осмотра") };
   const { data, error } = await supabase.from("users").update({ inspection_point_id: pointId }).eq("id", id).eq("role", "admin").select("id,inspection_point_id").maybeSingle();
