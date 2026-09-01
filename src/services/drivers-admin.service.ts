@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import bcrypt from "bcryptjs";
 import { supabase } from "@/lib/supabase";
 import { AuthService } from "@/services/auth.service";
 import type { Driver, DriverFormData, CustomerOption } from "@/types/database.types";
@@ -58,28 +57,27 @@ export async function createDriver(formData: DriverFormData) {
     if (!rawPassword.trim()) return { data: null, error: { message: "Пароль обязателен." } };
     const nextNumber = await getNextDriverNumber(formData.customer_id);
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
-    const session = await getCurrentAdmin();
-    if (!session) return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
-    const passwordHash = await bcrypt.hash(rawPassword, 12);
-    const { data: userData, error: userError } = await supabase.rpc("create_driver_user", { p_admin_id: Number(session.id), p_login: nextNumber.number, p_password: passwordHash });
-    if (userError) return { data: null, error: userError };
-    if (!userData) return { data: null, error: { message: "Не удалось создать пользователя водителя." } };
-    const { data: driverData, error: driverError } = await supabase.rpc("create_driver_record", {
-      p_admin_id: Number(session.id), p_user_id: Number(userData.id), p_name: String(formData.name).trim(), p_car_brand: String(formData.car_brand ?? "").trim(), p_car_number: String(formData.car_number ?? "").trim(), p_customer_id: Number(formData.customer_id), p_driver_id: nextNumber.number,
-      p_insurance_expiry: toDateValue(formData.insurance_expiry) ?? "", p_license_expiry: toDateValue(formData.license_expiry) ?? "", p_license_number: String(formData.license_number ?? "").trim(), p_medical_expiry: toDateValue(formData.medical_expiry) ?? "", p_tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry) ?? ""
+    if (!(await getCurrentAdmin())) return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+
+    const payload = {
+      ...formData,
+      name: String(formData.name).trim(),
+      driver_id: nextNumber.number,
+      customer_id: Number(formData.customer_id),
+      car_brand: String(formData.car_brand ?? "").trim(),
+      car_number: String(formData.car_number ?? "").trim(),
+      license_number: String(formData.license_number ?? "").trim(),
+      insurance_expiry: toDateValue(formData.insurance_expiry),
+      license_expiry: toDateValue(formData.license_expiry),
+      medical_expiry: toDateValue(formData.medical_expiry),
+      tech_inspection_expiry: toDateValue(formData.tech_inspection_expiry),
+    };
+    const response = await fetch("/api/admin/drivers", {
+      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
     });
-    if (driverError) { await supabase.from("users").delete().eq("id", Number(userData.id)); return { data: null, error: driverError }; }
-    if (!driverData) { await supabase.from("users").delete().eq("id", Number(userData.id)); return { data: null, error: { message: "Не удалось создать запись водителя." } }; }
-    const createdDriverId = Number((driverData as any).id);
-    if (Number.isFinite(createdDriverId)) {
-      const { error: scopeError } = await supabase.from("drivers").update({ inspection_scope: formData.inspection_scope || "both" }).eq("id", createdDriverId);
-      if (scopeError) return { data: null, error: scopeError };
-      if (formData.is_blacklisted !== undefined) {
-        const { error: blacklistError } = await supabase.rpc("set_driver_blacklist", { p_admin_id: Number(session.id), p_driver_id: createdDriverId, p_is_blacklisted: Boolean(formData.is_blacklisted) });
-        if (blacklistError) return { data: null, error: blacklistError };
-      }
-    }
-    return { data: driverData, error: null };
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) return { data: null, error: { message: body.error || "Не удалось создать водителя" } };
+    return { data: body.data ?? null, error: null };
   } catch (err) { return { data: null, error: { message: toError(err).message } }; }
 }
 
