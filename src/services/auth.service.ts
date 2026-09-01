@@ -33,10 +33,10 @@ export const AuthService = {
     const session = body.session;
     if (!getDashboardPath(session.role)) throw new Error('Для пользователя не настроена роль');
 
-    // Сессия хранится только на сервере и передается через HttpOnly cookie.
-    // Удаляем старые client-side значения, оставшиеся от предыдущей версии.
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('ts_user_session');
+      // Оставляем только безопасные метаданные сессии для legacy UI-кода.
+      // Источником истины для авторизации остаётся HttpOnly cookie/server session.
+      localStorage.setItem('ts_user_session', JSON.stringify(session));
       localStorage.removeItem('currentUser');
       emitAuthChange();
     }
