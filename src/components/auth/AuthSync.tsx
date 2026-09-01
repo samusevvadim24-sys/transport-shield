@@ -20,8 +20,12 @@ export default function AuthSync() {
   const router = useRouter();
 
   useEffect(() => {
-    const syncRoute = () => {
-      const session = AuthService.getSession();
+    let disposed = false;
+
+    const syncRoute = async () => {
+      const session = await AuthService.getServerSession();
+      if (disposed) return;
+
       const isPublic = pathname === "/" || pathname === "/login";
       const isDashboard = pathname.startsWith("/dashboard/");
 
@@ -32,8 +36,8 @@ export default function AuthSync() {
 
       const dashboardPath = getDashboardPath(session.role);
       if (!dashboardPath) {
-        AuthService.logout();
-        router.replace("/login");
+        await AuthService.logout();
+        if (!disposed) router.replace("/login");
         return;
       }
 
@@ -47,21 +51,16 @@ export default function AuthSync() {
       }
     };
 
-    syncRoute();
+    void syncRoute();
 
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === "ts_user_session" || event.key === "currentUser") {
-        syncRoute();
-      }
+    const handleAuthChange = () => {
+      void syncRoute();
     };
 
-    const handleAuthChange = () => syncRoute();
-
-    window.addEventListener("storage", handleStorage);
     window.addEventListener("ts-auth-change", handleAuthChange);
 
     return () => {
-      window.removeEventListener("storage", handleStorage);
+      disposed = true;
       window.removeEventListener("ts-auth-change", handleAuthChange);
     };
   }, [pathname, router]);
