@@ -136,6 +136,14 @@ export async function DELETE(request: Request, context: { params: Promise<{ id: 
     const { error: deleteError } = await db.from("drivers").delete().eq("id", id);
     if (deleteError) throw deleteError;
 
+    if (driver.user_id != null) {
+      const { error: userDeleteError } = await db
+        .from("users")
+        .delete()
+        .eq("id", Number(driver.user_id));
+      if (userDeleteError) throw userDeleteError;
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error("Ошибка удаления водителя:", error);
