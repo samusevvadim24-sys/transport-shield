@@ -1,7 +1,5 @@
 import { UserSession } from '@/types/database.types';
 
-export const SESSION_KEY = 'ts_user_session';
-export const LEGACY_SESSION_KEY = 'currentUser';
 export const AUTH_CHANGE_EVENT = 'ts-auth-change';
 
 const getDashboardPath = (role: UserSession['role'] | string | undefined) => {
@@ -35,55 +33,59 @@ export const AuthService = {
     const session = body.session;
     if (!getDashboardPath(session.role)) throw new Error('Для пользователя не настроена роль');
 
+    // Сессия хранится только на сервере и передается через HttpOnly cookie.
+    // Удаляем старые client-side значения, оставшиеся от предыдущей версии.
     if (typeof window !== 'undefined') {
-      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      localStorage.removeItem(LEGACY_SESSION_KEY);
+      localStorage.removeItem('ts_user_session');
+      localStorage.removeItem('currentUser');
       emitAuthChange();
     }
+
     return session;
   },
 
   async getServerSession(): Promise<UserSession | null> {
     if (typeof window === 'undefined') return null;
     try {
-      const response = await fetch('/api/auth/session', { credentials: 'include', cache: 'no-store' });
+      const response = await fetch('/api/auth/session', {
+        credentials: 'include',
+        cache: 'no-store',
+      });
       if (!response.ok) return null;
       const body = await response.json() as { session?: UserSession };
       const session = body.session;
       return session?.id && session.login && getDashboardPath(session.role) ? session : null;
-    } catch { return null; }
-  },
-
-  getSession(): UserSession | null {
-    if (typeof window === 'undefined') return null;
-    const data = localStorage.getItem(SESSION_KEY);
-    if (!data) return null;
-    try {
-      const session = JSON.parse(data) as UserSession;
-      if (session?.id && session?.login && getDashboardPath(session.role)) return session;
-    } catch { /* ignore malformed data */ }
-    localStorage.removeItem(SESSION_KEY);
-    return null;
+    } catch {
+      return null;
+    }
   },
 
   async logout() {
     if (typeof window === 'undefined') return;
-    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* ignore */ }
-    localStorage.removeItem(SESSION_KEY);
-    localStorage.removeItem(LEGACY_SESSION_KEY);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Cookie/session cleanup is handled by the server route.
+    }
+    localStorage.removeItem('ts_user_session');
+    localStorage.removeItem('currentUser');
     emitAuthChange();
   },
 
   subscribe(callback: (session: UserSession | null) => void) {
     if (typeof window === 'undefined') return () => undefined;
-    const notify = () => callback(AuthService.getSession());
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key === SESSION_KEY || event.key === LEGACY_SESSION_KEY) notify();
+
+    let disposed = false;
+    const notify = async () => {
+      const session = await AuthService.getServerSession();
+      if (!disposed) callback(session);
     };
-    window.addEventListener('storage', handleStorage);
+
+    void notify();
     window.addEventListener(AUTH_CHANGE_EVENT, notify);
+
     return () => {
-      window.removeEventListener('storage', handleStorage);
+      disposed = true;
       window.removeEventListener(AUTH_CHANGE_EVENT, notify);
     };
   },
