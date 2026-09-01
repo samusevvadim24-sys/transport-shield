@@ -21,12 +21,14 @@ type AuthSessionRow = {
   expires_at: string;
 };
 
-function getSupabase() {
+function getServerSupabase() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anonKey) throw new Error('Supabase is not configured');
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
+  }
 
-  return createClient(url, anonKey, {
+  return createClient(url, serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -44,7 +46,7 @@ export async function createServerSession(
   token: string,
   expiresAt: Date,
 ) {
-  const { error } = await getSupabase().rpc('create_auth_session', {
+  const { error } = await getServerSupabase().rpc('create_auth_session', {
     p_user_id: userId,
     p_token_hash: hashSessionToken(token),
     p_expires_at: expiresAt.toISOString(),
@@ -54,7 +56,7 @@ export async function createServerSession(
 }
 
 export async function revokeServerSession(token: string) {
-  const { error } = await getSupabase().rpc('revoke_auth_session', {
+  const { error } = await getServerSupabase().rpc('revoke_auth_session', {
     p_token_hash: hashSessionToken(token),
   });
 
@@ -65,7 +67,7 @@ export async function getSessionFromRequest(request: NextRequest): Promise<AuthS
   const token = request.cookies.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const { data, error } = await getSupabase().rpc('get_auth_session', {
+  const { data, error } = await getServerSupabase().rpc('get_auth_session', {
     p_token_hash: hashSessionToken(token),
   });
 

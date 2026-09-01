@@ -86,7 +86,8 @@ AS $function$
     WHERE token_hash = p_token_hash;
 $function$;
 
+-- Session RPCs are backend-only. The Next.js server uses the service_role key.
 REVOKE ALL ON TABLE public.auth_sessions FROM anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.create_auth_session(bigint, text, timestamptz) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_auth_session(text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.revoke_auth_session(text) TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.create_auth_session(bigint, text, timestamptz) FROM anon, authenticated;
+REVOKE ALL ON FUNCTION public.get_auth_session(text) FROM anon, authenticated;
+REVOKE ALL ON FUNCTION public.revoke_auth_session(text) FROM anon, authenticated;

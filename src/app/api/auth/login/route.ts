@@ -8,7 +8,7 @@ import {
   SESSION_TTL_SECONDS,
 } from '@/lib/auth-session';
 
- type UserRow = {
+type UserRow = {
   id: number;
   login: string;
   password_hash: string | null;
