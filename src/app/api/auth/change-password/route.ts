@@ -6,6 +6,7 @@ import type { NextRequest } from 'next/server';
 
 type UserRow = {
   id: number;
+  login: string;
   password_hash: string | null;
   role: 'admin' | 'customer' | 'driver';
 };
@@ -30,15 +31,14 @@ export async function POST(request: Request) {
     }
 
     const db = getServerSupabase();
-    const userId = Number(session.id);
-    if (!Number.isInteger(userId) || userId <= 0) {
-      return NextResponse.json({ error: 'Некорректная сессия пользователя' }, { status: 401 });
-    }
 
+    // Не полагаемся на session.id как на идентификатор строки users.
+    // Сессию создаём из users.id, но RPC/старые данные могли вернуть иной id.
+    // login + role являются стабильной связкой из текущей авторизованной сессии.
     const { data: user, error: readError } = await db
       .from('users')
-      .select('id,password_hash,role')
-      .eq('id', userId)
+      .select('id,login,password_hash,role')
+      .eq('login', session.login)
       .eq('role', session.role)
       .maybeSingle<UserRow>();
 
@@ -46,8 +46,11 @@ export async function POST(request: Request) {
       console.error('Ошибка чтения пользователя при смене пароля:', readError);
       return NextResponse.json({ error: 'Ошибка соединения с базой данных' }, { status: 500 });
     }
-    if (!user?.password_hash) {
+    if (!user) {
       return NextResponse.json({ error: 'Пользователь не найден' }, { status: 404 });
+    }
+    if (!user.password_hash) {
+      return NextResponse.json({ error: 'Для пользователя не настроен пароль' }, { status: 400 });
     }
 
     const matches = await bcrypt.compare(currentPassword, user.password_hash);
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
     const { error: updateError } = await db
       .from('users')
       .update({ password_hash: passwordHash, password: null })
-      .eq('id', userId)
+      .eq('id', user.id)
       .eq('role', session.role);
 
     if (updateError) {
