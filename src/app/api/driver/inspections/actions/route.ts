@@ -19,8 +19,15 @@ export async function POST(request: Request) {
     if (action === "acknowledge") {
       const inspectionId = Number(body?.inspectionId);
       if (!Number.isInteger(inspectionId)) return NextResponse.json({error:"Некорректный осмотр"},{status:400});
-      const { error } = await sb.from("inspections").update({summon_acknowledged:true}).eq("id",inspectionId).eq("driver_id",driverId);
+      const { data, error } = await sb
+        .from("inspections")
+        .update({summon_acknowledged:true})
+        .eq("id",inspectionId)
+        .eq("driver_id",driverId)
+        .select("id")
+        .maybeSingle();
       if (error) throw error;
+      if (!data) return NextResponse.json({error:"Осмотр не найден или не принадлежит водителю"},{status:404});
       return NextResponse.json({ok:true});
     }
     if (action === "create") {
