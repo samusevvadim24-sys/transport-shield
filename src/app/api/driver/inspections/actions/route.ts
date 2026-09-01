@@ -24,12 +24,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ok:true});
     }
     if (action === "create") {
+      const { data: activeInspection, error: activeInspectionError } = await sb
+        .from("inspections")
+        .select("id,overall_status")
+        .eq("driver_id", driverId)
+        .is("completed_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (activeInspectionError) throw activeInspectionError;
+      if (activeInspection) {
+        return NextResponse.json(
+          { error:"У водителя уже есть активный осмотр", inspectionId:activeInspection.id, overall_status:activeInspection.overall_status },
+          { status:409 }
+        );
+      }
+
       const scope = driver.inspection_scope || "both";
       const inspection: Record<string,unknown> = {driver_id:driverId,inspection_point_id:null,requested_at:new Date().toISOString(),overall_status:"Ожидание"};
       if (scope === "medical" || scope === "both") inspection.medical_status="Ожидание";
       if (scope === "mechanic" || scope === "both") inspection.mechanic_status="Ожидание";
       const {error} = await sb.from("inspections").insert([inspection]);
-      if(error) throw error;
+      if(error) {
+        if (error.code === "23505") {
+          return NextResponse.json({error:"У водителя уже есть активный осмотр"},{status:409});
+        }
+        throw error;
+      }
       return NextResponse.json({ok:true});
     }
     return NextResponse.json({error:"Неизвестное действие"},{status:400});
