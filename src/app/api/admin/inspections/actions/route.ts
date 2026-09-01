@@ -42,13 +42,13 @@ export async function POST(request: Request) {
     }
 
     if (action === "reset") {
-      const { error } = await sb.from("inspections").update({ overall_status:"Ожидание", medical_status:"Ожидание", mechanic_status:"Ожидание", medical_date:null, mechanic_date:null, completed_at:null, breathalyzer_value:null, blood_pressure_systolic:null, blood_pressure_diastolic:null, drug_intoxication:false, mechanic_issues:[], medical_examiner_id:null, mechanic_examiner_id:null, medical_examiner_name:null, mechanic_examiner_name:null, inspection_point_id:null }).eq("id", id);
+      const { error } = await sb.from("inspections").update({ overall_status:"Ожидание", medical_status:"Ожидание", mechanic_status:"Ожидание", medical_date:null, mechanic_date:null, completed_at:null, breathalyzer_value:null, blood_pressure_systolic:null, blood_pressure_diastolic:null, drug_intoxication:false, mechanic_issues:[], medical_examiner_id:null, mechanic_examiner_id:null, medical_examiner_name:null, mechanic_examiner_name:null, inspection_point_id:null, summon:false, summon_acknowledged:false }).eq("id", id);
       if (error) throw error;
       return NextResponse.json({ ok: true });
     }
 
     if (action === "summon") {
-      const { error } = await sb.from("inspections").update({ overall_status:"Явиться", medical_status: current.inspection_scope === "mechanic" ? "Не требуется" : "Явиться", mechanic_status: current.inspection_scope === "medical" ? "Не требуется" : "Явиться", summon_acknowledged:false }).eq("id", id);
+      const { error } = await sb.from("inspections").update({ overall_status:"Явиться", medical_status: current.inspection_scope === "mechanic" ? "Не требуется" : "Явиться", mechanic_status: current.inspection_scope === "medical" ? "Не требуется" : "Явиться", summon:true, summon_acknowledged:false }).eq("id", id);
       if (error) throw error;
       return NextResponse.json({ ok: true });
     }
@@ -82,20 +82,20 @@ export async function POST(request: Request) {
     if (action === "approve") {
       if (current.inspection_scope === "medical") {
         const ok = BP_OK(current.blood_pressure_systolic ?? 120, current.blood_pressure_diastolic ?? 80) && (current.breathalyzer_value ?? 0) === 0 && current.drug_intoxication !== true;
-        const { error } = await sb.from("inspections").update({ overall_status:ok?"Допущен":"Не допущен", medical_status:ok?"Допущен":"Не допущен", mechanic_status:"Не требуется", medical_date:now, mechanic_date:null, completed_at:now, medical_examiner_id:med.id, mechanic_examiner_id:null, medical_examiner_name:med.name, mechanic_examiner_name:null }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
+        const { error } = await sb.from("inspections").update({ overall_status:ok?"Допущен":"Не допущен", medical_status:ok?"Допущен":"Не допущен", mechanic_status:"Не требуется", medical_date:now, mechanic_date:null, completed_at:now, medical_examiner_id:med.id, mechanic_examiner_id:null, medical_examiner_name:med.name, mechanic_examiner_name:null, summon:false, summon_acknowledged:false }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
       }
       if (current.inspection_scope === "mechanic") {
-        const { error } = await sb.from("inspections").update({ overall_status:"Допущен", medical_status:"Не требуется", mechanic_status:"Допущен", medical_date:null, mechanic_date:now, completed_at:now, mechanic_issues:[], medical_examiner_id:null, mechanic_examiner_id:mech.id, medical_examiner_name:null, mechanic_examiner_name:mech.name }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
+        const { error } = await sb.from("inspections").update({ overall_status:"Допущен", medical_status:"Не требуется", mechanic_status:"Допущен", medical_date:null, mechanic_date:now, completed_at:now, mechanic_issues:[], medical_examiner_id:null, mechanic_examiner_id:mech.id, medical_examiner_name:null, mechanic_examiner_name:mech.name, summon:false, summon_acknowledged:false }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
       }
       const s = current.blood_pressure_systolic ?? 120, d = current.blood_pressure_diastolic ?? 80;
       const ok = BP_OK(s,d) && (current.breathalyzer_value ?? 0) === 0 && current.drug_intoxication !== true;
-      const { error } = await sb.from("inspections").update({ overall_status:ok?"Допущен":"Не допущен", medical_status:ok?"Допущен":"Не допущен", mechanic_status:ok?"Допущен":"Не допущен", medical_date:now, mechanic_date:now, completed_at:now, blood_pressure_systolic:s, blood_pressure_diastolic:d, mechanic_issues:ok?[]:["Медицинские показатели не соответствуют норме"], medical_examiner_id:med.id, mechanic_examiner_id:mech.id, medical_examiner_name:med.name, mechanic_examiner_name:mech.name }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
+      const { error } = await sb.from("inspections").update({ overall_status:ok?"Допущен":"Не допущен", medical_status:ok?"Допущен":"Не допущен", mechanic_status:ok?"Допущен":"Не допущен", medical_date:now, mechanic_date:now, completed_at:now, blood_pressure_systolic:s, blood_pressure_diastolic:d, mechanic_issues:ok?[]:["Медицинские показатели не соответствуют норме"], medical_examiner_id:med.id, mechanic_examiner_id:mech.id, medical_examiner_name:med.name, mechanic_examiner_name:mech.name, summon:false, summon_acknowledged:false }).eq("id", id); if(error) throw error; return NextResponse.json({ok:true});
     }
 
     if (action === "reject") {
       const issues = Array.isArray(body?.issuesList) ? body.issuesList.map(String) : [];
       const mechStatus = issues.length ? "Не допущен" : "Допущен";
-      const patch: Record<string, unknown> = { completed_at:now, mechanic_issues:issues, mechanic_status:mechStatus, mechanic_examiner_id:mech.id, mechanic_examiner_name:mech.name };
+      const patch: Record<string, unknown> = { completed_at:now, mechanic_issues:issues, mechanic_status:mechStatus, mechanic_examiner_id:mech.id, mechanic_examiner_name:mech.name, summon:false, summon_acknowledged:false };
       if (current.inspection_scope === "medical") Object.assign(patch,{ overall_status:current.medical_status === "Допущен" ? "Допущен" : "Не допущен", mechanic_status:"Не требуется", mechanic_date:null, mechanic_issues:null, mechanic_examiner_id:null, mechanic_examiner_name:null, medical_examiner_id:med.id, medical_examiner_name:med.name });
       else if (current.inspection_scope === "mechanic") Object.assign(patch,{ overall_status:mechStatus, medical_status:"Не требуется", mechanic_date:now, medical_date:null, breathalyzer_value:null, blood_pressure_systolic:null, blood_pressure_diastolic:null, drug_intoxication:false, medical_examiner_id:null, medical_examiner_name:null });
       else Object.assign(patch,{ overall_status:current.medical_status === "Допущен" && mechStatus === "Допущен" ? "Допущен" : "Не допущен", mechanic_date:now });
