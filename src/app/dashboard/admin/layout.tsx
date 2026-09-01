@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { decodeSessionValue, SESSION_COOKIE } from '@/lib/auth-session';
+import { getSessionFromToken, SESSION_COOKIE } from '@/lib/auth-session';
 
 export const metadata: Metadata = {
   title: 'ТЩ | Кабинет администратора',
@@ -16,14 +16,10 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const cookieStore = await cookies();
-  const value = cookieStore.get(SESSION_COOKIE)?.value;
-  const session = value ? decodeSessionValue(value) : null;
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const session = token ? await getSessionFromToken(token) : null;
 
-  if (!session) {
-    redirect('/login');
-  }
-
-  if (session.role !== 'admin') {
+  if (!session || session.role !== 'admin') {
     redirect('/login');
   }
 
