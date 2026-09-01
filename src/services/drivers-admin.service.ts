@@ -47,6 +47,12 @@ export async function getNextDriverNumber(customerId: string | number): Promise<
   } catch (err) { return { number: null, error: toError(err) }; }
 }
 
+async function getCurrentAdmin() {
+  const session = await AuthService.getServerSession();
+  if (!session || session.role !== "admin") return null;
+  return session;
+}
+
 export async function createDriver(formData: DriverFormData) {
   try {
     if (!String(formData.name ?? "").trim()) return { data: null, error: { message: "ФИО водителя обязательно." } };
@@ -54,8 +60,8 @@ export async function createDriver(formData: DriverFormData) {
     if (!rawPassword.trim()) return { data: null, error: { message: "Пароль обязателен." } };
     const nextNumber = await getNextDriverNumber(formData.customer_id);
     if (nextNumber.error || !nextNumber.number) return { data: null, error: { message: nextNumber.error?.message || "Не удалось определить номер водителя." } };
-    const session = AuthService.getSession();
-    if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+    const session = await getCurrentAdmin();
+    if (!session) return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
     const passwordHash = await bcrypt.hash(rawPassword, 12);
     const { data: userData, error: userError } = await supabase.rpc("create_driver_user", { p_admin_id: Number(session.id), p_login: nextNumber.number, p_password: passwordHash });
     if (userError) return { data: null, error: userError };
@@ -81,8 +87,8 @@ export async function createDriver(formData: DriverFormData) {
 
 export async function updateDriver(id: string | number, formData: DriverFormData, userId?: number | null) {
   try {
-    const session = AuthService.getSession();
-    if (!session || session.role !== "admin") return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
+    const session = await getCurrentAdmin();
+    if (!session) return { data: null, error: { message: "Не удалось определить текущего администратора. Войдите в систему заново." } };
     let passwordHash: string | null = null;
     const rawPassword = String(formData.password ?? "");
     if (rawPassword.trim()) passwordHash = await bcrypt.hash(rawPassword, 12);
@@ -98,8 +104,8 @@ export async function updateDriver(id: string | number, formData: DriverFormData
 
 export async function deleteDriverRecord(id: string | number, _userId?: number | null) {
   try {
-    const session = AuthService.getSession();
-    if (!session || session.role !== "admin") return { error: { message: "Недостаточно прав для удаления водителя. Войдите как администратор." } };
+    const session = await getCurrentAdmin();
+    if (!session) return { error: { message: "Недостаточно прав для удаления водителя. Войдите как администратор." } };
     const { error } = await supabase.rpc("delete_driver_record", { p_admin_id: Number(session.id), p_driver_id: Number(id) });
     if (error) return { error };
     return { error: null };
