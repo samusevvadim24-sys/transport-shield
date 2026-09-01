@@ -63,8 +63,7 @@ export async function revokeServerSession(token: string) {
   if (error) throw new Error(`Не удалось завершить серверную сессию: ${error.message}`);
 }
 
-export async function getSessionFromRequest(request: NextRequest): Promise<AuthSession | null> {
-  const token = request.cookies.get(SESSION_COOKIE)?.value;
+export async function getSessionFromToken(token: string): Promise<AuthSession | null> {
   if (!token) return null;
 
   const { data, error } = await getServerSupabase().rpc('get_auth_session', {
@@ -86,4 +85,9 @@ export async function getSessionFromRequest(request: NextRequest): Promise<AuthS
     inspection_point_id: row.inspection_point_id ?? null,
     exp,
   };
+}
+
+export async function getSessionFromRequest(request: NextRequest): Promise<AuthSession | null> {
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  return token ? getSessionFromToken(token) : null;
 }
