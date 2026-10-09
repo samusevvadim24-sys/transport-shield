@@ -1,125 +1,155 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { ArrowRight, BarChart3, Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck, UserRound, Clock3, Globe2 } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AuthService, getDashboardPath } from "@/services/auth.service";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!login || !password) {
+    if (!login.trim() || !password) {
       setErrorMessage("Введите логин и пароль");
       return;
     }
-
     setIsLoading(true);
     setErrorMessage("");
-
     try {
       const session = await AuthService.login(login, password);
       const dashboardPath = getDashboardPath(session.role);
-
-      if (!dashboardPath) {
-        throw new Error("Для пользователя не настроена роль");
-      }
-
-      // Cookie ts_auth_session устанавливается сервером в ответе на login.
-      // Полная навигация гарантирует, что следующий запрос страницы dashboard
-      // будет выполнен уже с установленной HttpOnly cookie.
+      if (!dashboardPath) throw new Error("Для пользователя не настроена роль");
       window.location.assign(dashboardPath);
     } catch (error) {
-      if (error instanceof Error) {
-        setErrorMessage(error.message);
-      } else {
-        setErrorMessage("Произошла ошибка при входе. Попробуйте позже.");
-      }
+      setErrorMessage(error instanceof Error ? error.message : "Произошла ошибка при входе. Попробуйте позже.");
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#F7F8FA] px-4">
-      <div className="w-full max-w-md rounded-3xl bg-white p-10 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-6 flex h-32 w-32 items-center justify-center">
-            <img
-              src="/logo.png"
-              alt="Логотип"
-              className="h-full w-full object-contain"
-            />
+    <main className="min-h-screen bg-[#061d3b] p-0 text-[#102b50] lg:p-3">
+      <div className="mx-auto grid min-h-screen max-w-[1800px] overflow-hidden bg-white lg:min-h-[calc(100vh-24px)] lg:grid-cols-[minmax(0,1.12fr)_minmax(480px,0.88fr)] lg:rounded-[28px]">
+        <section className="relative isolate flex min-h-[430px] flex-col overflow-hidden bg-[#06264e] px-7 py-8 text-white sm:px-12 sm:py-10 lg:min-h-[760px] lg:px-16 lg:py-14">
+          <div className="absolute inset-0 -z-20 bg-[url('https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1800&q=85')] bg-cover bg-center opacity-45" />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#052044]/95 via-[#07366a]/80 to-[#071a36]/90" />
+          <div className="absolute inset-0 -z-10 opacity-25" style={{backgroundImage:"radial-gradient(circle at 70% 25%, #75c7ff 1px, transparent 2px)",backgroundSize:"27px 27px"}} />
+          <div className="flex items-center gap-4">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/10 shadow-lg backdrop-blur-sm">
+              <ShieldCheck size={34} strokeWidth={1.8} className="text-sky-200" />
+            </div>
+            <div>
+              <div className="text-xl font-bold leading-tight tracking-tight sm:text-2xl">Транспортный Щит</div>
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-[.19em] text-blue-100/80 sm:text-xs">Система предрейсовых осмотров</div>
+            </div>
           </div>
 
-          <h1 className="text-3xl font-bold leading-tight text-[#042433]">
-            Цифровая система
-          </h1>
-          <p className="mt-1 text-xl font-medium tracking-wide text-[#042433]/80">
-            предрейсового контроля
-          </p>
-        </div>
-
-        {errorMessage && (
-          <div className="mb-4 rounded-xl bg-[#9B2C2C]/10 p-3 text-center text-sm font-medium text-[#9B2C2C] border border-[#9B2C2C]/20">
-            {errorMessage}
-          </div>
-        )}
-
-        <form className="space-y-4" onSubmit={handleLogin}>
-          <div className="relative">
-            <User size={20} className="absolute left-4 top-3.5 text-gray-400" />
-            <input
-              type="text"
-              value={login}
-              onChange={(e) => setLogin(e.target.value)}
-              placeholder="Логин или табельный номер"
-              className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-4 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-[#042433] focus:ring-[#042433]/20"
-            />
+          <div className="relative z-10 mt-12 max-w-xl sm:mt-16 lg:mt-[clamp(3rem,10vh,8rem)]">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-200/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-sky-100 backdrop-blur">
+              <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />
+              Безопасность начинается с контроля
+            </div>
+            <h1 className="max-w-xl text-4xl font-semibold leading-[1.08] tracking-[-.04em] sm:text-5xl xl:text-6xl">
+              Безопасные водители — <span className="text-sky-200">надёжные поездки</span>
+            </h1>
+            <p className="mt-6 max-w-lg text-sm leading-6 text-blue-100/85 sm:text-base sm:leading-7">
+              Контроль состояния водителей, автомобилей и документов. Все предрейсовые проверки — в одной понятной системе.
+            </p>
           </div>
 
-          <div className="relative">
-            <Lock size={20} className="absolute left-4 top-3.5 text-gray-400" />
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Пароль"
-              className="w-full rounded-xl border border-gray-300 py-3 pl-12 pr-12 text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-[#042433] focus:ring-[#042433]/20"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-3.5 text-gray-400 transition hover:text-[#042433] cursor-pointer"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
+          <div className="relative z-10 mt-10 grid max-w-xl gap-4 sm:mt-12 sm:grid-cols-1">
+            <Feature icon={<ShieldCheck size={21}/>} title="Забота о безопасности" description="Здоровье водителей и готовность автомобиля" />
+            <Feature icon={<Clock3 size={21}/>} title="Экономия времени" description="Меньше ручной работы, больше порядка" />
+            <Feature icon={<BarChart3 size={21}/>} title="Полная прозрачность" description="Статусы и история осмотров в одном месте" />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-xl bg-[#042433] py-3 font-semibold text-white transition hover:bg-[#0d5c7c] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center"
-          >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              "Войти в систему"
+          <div className="relative z-10 mt-10 flex items-center gap-3 border-t border-white/15 pt-5 text-xs text-blue-100/65 sm:mt-auto sm:pt-7">
+            <Globe2 size={16} />
+            <span>Единое цифровое пространство для водителей и организаций</span>
+          </div>
+          <div className="pointer-events-none absolute -bottom-20 right-[-8%] hidden h-72 w-72 rounded-full border border-sky-200/20 lg:block" />
+          <div className="pointer-events-none absolute -bottom-10 right-[3%] hidden h-52 w-52 rounded-full border border-sky-200/20 lg:block" />
+        </section>
+
+        <section className="flex items-center justify-center bg-[#f7f9fc] px-5 py-10 sm:px-10 lg:px-12 xl:px-20">
+          <div className="w-full max-w-[470px]">
+            <div className="mb-12 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#0b4b91] text-white shadow-md shadow-blue-900/15">
+                  <ShieldCheck size={26} />
+                </div>
+                <div className="text-lg font-bold leading-tight tracking-tight text-[#0b2b53]">Транспортный<br/>Щит</div>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm">
+                <Globe2 size={15}/> RU
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-[#1766b3]">Личный кабинет</p>
+              <h2 className="text-3xl font-semibold tracking-[-.035em] text-[#102b50] sm:text-[38px]">Добро пожаловать!</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">Войдите в свой аккаунт, чтобы продолжить работу.</p>
+            </div>
+
+            {errorMessage && (
+              <div role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <span className="mt-0.5 font-bold">!</span><span>{errorMessage}</span>
+              </div>
             )}
-          </button>
-        </form>
 
-        <div className="mt-6 text-center text-xs text-gray-400">
-          <p>© ООО &quot;Транспортный щит&quot; УНП: 193992564</p>
-        </div>
+            <form onSubmit={handleLogin} className="space-y-5">
+              <div>
+                <label htmlFor="login" className="mb-2 block text-sm font-semibold text-[#18385f]">Логин или табельный номер</label>
+                <div className="group relative">
+                  <UserRound size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[#1261b2]"/>
+                  <input id="login" name="login" autoComplete="username" value={login} onChange={(e)=>setLogin(e.target.value)} placeholder="Введите логин" className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2475c5] focus:ring-4 focus:ring-blue-100" />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#18385f]">Пароль</label>
+                <div className="group relative">
+                  <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[#1261b2]"/>
+                  <input id="password" name="password" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Введите пароль" className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2475c5] focus:ring-4 focus:ring-blue-100" />
+                  <button type="button" aria-label={showPassword?"Скрыть пароль":"Показать пароль"} onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:text-[#124f91] focus:outline-none focus:ring-2 focus:ring-blue-200">
+                    {showPassword?<EyeOff size={19}/>:<Eye size={19}/>}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-sm">
+                <label className="inline-flex cursor-pointer items-center gap-2.5 text-slate-600">
+                  <input type="checkbox" checked={rememberMe} onChange={(e)=>setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-slate-300 accent-[#145db0] focus:ring-blue-300"/>
+                  Запомнить меня
+                </label>
+                <button type="button" onClick={()=>setErrorMessage("Для восстановления доступа обратитесь к администратору системы.")} className="font-semibold text-[#1264b6] transition hover:text-[#083e79] hover:underline">Забыли пароль?</button>
+              </div>
+
+              <button type="submit" disabled={isLoading} className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#1260b3] to-[#0a4c98] px-5 text-sm font-bold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-900/20 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-65">
+                {isLoading ? <><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white"/>Выполняется вход…</> : <>Войти в систему <ArrowRight size={18} className="transition group-hover:translate-x-1"/> </>}
+              </button>
+            </form>
+
+            <div className="my-7 flex items-center gap-4 text-[11px] font-medium uppercase tracking-[.2em] text-slate-400"><span className="h-px flex-1 bg-slate-200"/>Безопасный доступ<span className="h-px flex-1 bg-slate-200"/></div>
+            <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white px-4 py-4 text-xs leading-5 text-slate-500">
+              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#145da9]"><KeyRound size={16}/></span>
+              <span>Доступ к системе предоставляется только авторизованным пользователям. Если у вас нет учётной записи, обратитесь к администратору.</span>
+            </div>
+            <p className="mt-8 text-center text-xs text-slate-400">© ООО «Транспортный Щит» · УНП 193992564</p>
+          </div>
+        </section>
       </div>
     </main>
   );
+}
+
+function Feature({icon,title,description}:{icon:React.ReactNode;title:string;description:string}) {
+  return <div className="flex items-center gap-4">
+    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-sky-200 backdrop-blur-sm">{icon}</div>
+    <div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-5 text-blue-100/70 sm:text-sm">{description}</p></div>
+  </div>;
 }
