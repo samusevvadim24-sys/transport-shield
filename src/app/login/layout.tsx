@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Транспортный Щит | Вход',
+  title: 'Драйв Контроль | Вход',
   icons: {
     icon: '/logo.png',
   },
