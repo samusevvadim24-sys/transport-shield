@@ -39,8 +39,8 @@ export default function LoginPage() {
         style={{ backgroundImage: "url('/images/taxi-background.png')" }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/95 via-[#062b55]/80 to-[#04152d]/65" />
-      <div className="absolute inset-0 opacity-25" style={{backgroundImage:"radial-gradient(circle at 68% 22%, #8bd5ff 1px, transparent 2px)",backgroundSize:"30px 30px"}} />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/65 via-[#062b55]/30 to-[#04152d]/10" />
+      <div className="absolute inset-0 opacity-15" style={{backgroundImage:"radial-gradient(circle at 68% 22%, #8bd5ff 1px, transparent 2px)",backgroundSize:"30px 30px"}} />
       <div className="relative z-10 mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 items-center gap-8 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(440px,520px)] lg:gap-12 lg:px-14 lg:py-10 xl:px-20">
         <section className="flex flex-col justify-center py-5 sm:py-8 lg:min-h-[calc(100vh-80px)] lg:py-12">
           <div className="flex items-center gap-4">
