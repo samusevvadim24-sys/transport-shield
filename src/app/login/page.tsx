@@ -39,8 +39,9 @@ export default function LoginPage() {
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-5 px-3 py-2 sm:px-5 sm:py-2 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7 lg:px-[2vw] lg:py-0">
-        <section className="flex flex-col justify-start self-start pt-2 pb-4 sm:pt-3 lg:min-h-screen lg:pt-5 lg:pb-0">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1920px] items-center px-3 py-2 sm:px-5 sm:py-2 lg:px-[2vw] lg:py-0">
+        <div className="grid w-full grid-cols-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7">
+        <section className="flex flex-col justify-start gap-6 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-0">
           <div className="flex items-center gap-6">
             <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
               <ShieldCheck size={76} strokeWidth={1.65} />
@@ -51,7 +52,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-6 max-w-[700px] sm:mt-8 lg:mt-[clamp(1.5rem,3vh,2.5rem)]">
+          <div className="mt-6 max-w-[700px] sm:mt-8 lg:mt-0">
             <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[40px]">
               Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
@@ -60,7 +61,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-6 grid max-w-[560px] gap-4 sm:mt-7">
+          <div className="mt-6 grid max-w-[560px] gap-4 sm:mt-7 lg:mt-0">
             <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
             <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
             <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
@@ -139,6 +140,7 @@ export default function LoginPage() {
             </div>
           </div>
         </section>
+        </div>
       </div>
     </main>
   );
