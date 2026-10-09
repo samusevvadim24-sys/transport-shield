@@ -44,9 +44,7 @@ export default function LoginPage() {
         <div className="grid w-full grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(500px,572px)] lg:gap-[3vw]">
         <section className="flex flex-col justify-start gap-8 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-4">
           <div className="flex items-center gap-6">
-            <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
-              <ShieldCheck size={76} strokeWidth={1.65} />
-            </div>
+            <div className="grid h-[106px] w-[106px] shrink-0 place-items-center"><img src="/logo.png" alt="Транспортный Щит" className="h-full w-full object-contain" /></div>
             <div>
               <div className="text-[30px] font-bold leading-[1.15] tracking-tight sm:text-[34px]">Транспортный<br />Щит</div>
               <div className="mt-2 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">СИСТЕМА ПРЕДРЕЙСОВЫХ ОСМОТРОВ<br />ВОДИТЕЛЕЙ ТАКСИ</div>
