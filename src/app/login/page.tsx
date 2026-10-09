@@ -46,7 +46,7 @@ export default function LoginPage() {
               <ShieldCheck size={76} strokeWidth={1.65} />
             </div>
             <div>
-              <div className="text-3xl font-bold leading-[1.02] tracking-tight sm:text-4xl">Транспортный<br />Щит</div>
+              <div className="text-3xl font-bold leading-[1.02] tracking-tight sm:text-4xl">Драйв<br />Контроль</div>
               <div className="mt-4 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">СИСТЕМА ПРЕДРЕЙСОВЫХ ОСМОТРОВ<br />ВОДИТЕЛЕЙ ТАКСИ</div>
             </div>
           </div>
@@ -71,8 +71,8 @@ export default function LoginPage() {
           <div className="w-full max-w-[572px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-14 xl:py-11">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <img src="/logo.png" alt="Транспортный Щит" className="h-[68px] w-[68px] shrink-0 object-contain" />
-                <div className="text-[25px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Транспортный<br />Щит</div>
+                <img src="/logo.png" alt="Драйв Контроль" className="h-[68px] w-[68px] shrink-0 object-contain" />
+                <div className="text-[25px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Драйв<br />Контроль</div>
               </div>
               <button type="button" aria-label="Язык интерфейса: русский" className="inline-flex items-center gap-2 rounded-full bg-[#f5f8fc] px-3 py-2 text-sm font-medium text-[#092d5c]">
                 <Globe2 size={20} strokeWidth={1.8}/> RU <span className="text-xs">⌄</span>
