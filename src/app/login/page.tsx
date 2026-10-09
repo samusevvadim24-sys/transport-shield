@@ -39,8 +39,8 @@ export default function LoginPage() {
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-5 px-4 py-4 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7 lg:px-[2.5vw] lg:py-3">
-        <section className="flex flex-col justify-center py-1 sm:py-3 lg:min-h-[calc(100vh-24px)] lg:py-2">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-5 px-3 py-2 sm:px-5 sm:py-2 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7 lg:px-[2vw] lg:py-0">
+        <section className="flex flex-col justify-center py-0 sm:py-1 lg:min-h-screen lg:py-0">
           <div className="flex items-center gap-6">
             <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
               <ShieldCheck size={76} strokeWidth={1.65} />
@@ -51,7 +51,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-8 max-w-[700px] sm:mt-10 lg:mt-[clamp(2rem,5vh,4rem)]">
+          <div className="mt-6 max-w-[700px] sm:mt-8 lg:mt-[clamp(1.5rem,3vh,2.5rem)]">
             <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[40px]">
               Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
@@ -60,7 +60,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-8 grid max-w-[560px] gap-4 sm:mt-10">
+          <div className="mt-6 grid max-w-[560px] gap-4 sm:mt-7">
             <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
             <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
             <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
