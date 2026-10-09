@@ -47,7 +47,7 @@ export default function LoginPage() {
             </div>
             <div>
               <div className="text-3xl font-bold leading-[1.02] tracking-tight sm:text-4xl">Транспортный<br />Щит</div>
-              <div className="mt-4 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">Система предрейсовых осмотров<br />водителей такси</div>
+              <div className="mt-4 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">СИСТЕМА ПРЕДРЕЙСОВЫХ ОСМОТРОВ<br />ВОДИТЕЛЕЙ ТАКСИ</div>
             </div>
           </div>
 
