@@ -1,7 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { ArrowRight, BarChart3, Eye, EyeOff, KeyRound, LockKeyhole, ShieldCheck, UserRound, Clock3, Globe2 } from "lucide-react";
+import { ArrowRight, BarChart3, Eye, EyeOff, LockKeyhole, ShieldCheck, UserRound, Clock3, Globe2, KeyRound } from "lucide-react";
 import { useState } from "react";
 import { AuthService, getDashboardPath } from "@/services/auth.service";
 
@@ -33,106 +32,102 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#061d3b] text-white">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#06274c] font-sans text-white">
       <div
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: "url('/images/taxi-background.png')" }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/65 via-[#062b55]/30 to-[#04152d]/10" />
-      <div className="absolute inset-0 opacity-15" style={{backgroundImage:"radial-gradient(circle at 68% 22%, #8bd5ff 1px, transparent 2px)",backgroundSize:"30px 30px"}} />
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 items-center gap-8 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(440px,520px)] lg:gap-12 lg:px-14 lg:py-10 xl:px-20">
-        <section className="flex flex-col justify-center py-5 sm:py-8 lg:min-h-[calc(100vh-80px)] lg:py-12">
-          <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-white/25 bg-white/10 shadow-lg backdrop-blur-sm">
-              <ShieldCheck size={34} strokeWidth={1.8} className="text-sky-200" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 items-center gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(460px,580px)] lg:gap-10 lg:px-14 lg:py-7 xl:px-20">
+        <section className="flex flex-col justify-center py-3 sm:py-6 lg:min-h-[calc(100vh-56px)] lg:py-8">
+          <div className="flex items-center gap-6">
+            <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
+              <ShieldCheck size={76} strokeWidth={1.65} />
             </div>
             <div>
-              <div className="text-xl font-bold leading-tight tracking-tight sm:text-2xl">Транспортный Щит</div>
-              <div className="mt-1 text-[10px] font-semibold uppercase tracking-[.19em] text-blue-100/80 sm:text-xs">Система предрейсовых осмотров</div>
+              <div className="text-3xl font-bold leading-[1.02] tracking-tight sm:text-4xl">Транспортный<br />Щит</div>
+              <div className="mt-4 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">Система предрейсовых осмотров<br />водителей такси</div>
             </div>
           </div>
-          <div className="mt-10 max-w-2xl sm:mt-14 lg:mt-20">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-sky-200/25 bg-white/10 px-3 py-1.5 text-xs font-medium text-sky-100 backdrop-blur">
-              <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" />
-              Безопасность начинается с контроля
-            </div>
-            <h1 className="max-w-2xl text-4xl font-semibold leading-[1.08] tracking-[-.04em] sm:text-5xl xl:text-6xl">
-              Безопасные водители — <span className="text-sky-200">надёжные поездки</span>
+
+          <div className="mt-12 max-w-[700px] sm:mt-16 lg:mt-[clamp(3rem,9vh,7rem)]">
+            <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[40px]">
+              Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
-            <p className="mt-6 max-w-xl text-sm leading-6 text-blue-100/90 sm:text-base sm:leading-7">
-              Контроль состояния водителей, автомобилей и документов. Все предрейсовые проверки — в одной понятной системе.
+            <p className="mt-6 max-w-[500px] text-base leading-[1.45] text-white/95 sm:text-[17px]">
+              Контроль состояния водителей, автомобилей<br className="hidden xl:block" /> и документов. Автоматизация медосмотров<br className="hidden xl:block" /> и управление автопарком в единой системе.
             </p>
           </div>
-          <div className="mt-8 grid max-w-2xl gap-4 sm:mt-10 sm:grid-cols-3 lg:mt-14 lg:grid-cols-1 xl:grid-cols-3">
-            <Feature icon={<ShieldCheck size={21}/>} title="Безопасность" description="Здоровье водителей и готовность автомобиля" />
-            <Feature icon={<Clock3 size={21}/>} title="Экономия времени" description="Меньше ручной работы, больше порядка" />
-            <Feature icon={<BarChart3 size={21}/>} title="Прозрачность" description="Статусы и история осмотров" />
-          </div>
-          <div className="mt-8 flex items-center gap-3 border-t border-white/15 pt-5 text-xs text-blue-100/65 lg:mt-auto lg:pt-7">
-            <Globe2 size={16} />
-            <span>Единое цифровое пространство для водителей и организаций</span>
+
+          <div className="mt-12 grid max-w-[560px] gap-6 sm:mt-16">
+            <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
+            <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
+            <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
           </div>
         </section>
 
         <section className="flex items-center justify-center py-2 sm:py-4 lg:py-0">
-          <div className="w-full max-w-[520px] rounded-[28px] border border-white/70 bg-white px-6 py-8 text-[#102b50] shadow-[0_30px_100px_rgba(0,12,35,0.38)] sm:px-10 sm:py-10 xl:px-12">
-            <div className="mb-9 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#0b4b91] text-white shadow-md shadow-blue-900/15">
-                  <ShieldCheck size={26} />
+          <div className="w-full max-w-[580px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-16 xl:py-11">
+            <div className="mb-8 flex items-start justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="grid h-[68px] w-[68px] shrink-0 place-items-center text-[#1266b9]">
+                  <ShieldCheck size={68} strokeWidth={1.8} />
                 </div>
-                <div className="text-lg font-bold leading-tight tracking-tight text-[#0b2b53]">Транспортный<br/>Щит</div>
+                <div className="text-[27px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Транспортный<br />Щит</div>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
-                <Globe2 size={15}/> RU
+              <div className="inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-medium text-[#092d5c]">
+                <Globe2 size={20} strokeWidth={1.8}/> RU <span className="text-xs">⌄</span>
               </div>
             </div>
-            <div className="mb-7">
-              <p className="mb-3 text-xs font-bold uppercase tracking-[.18em] text-[#1766b3]">Личный кабинет</p>
-              <h2 className="text-3xl font-semibold tracking-[-.035em] text-[#102b50] sm:text-[38px]">Добро пожаловать!</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-500 sm:text-base">Войдите в свой аккаунт, чтобы продолжить работу.</p>
+
+            <div className="mb-10">
+              <h2 className="text-[29px] font-bold leading-tight tracking-[-.025em] text-[#092d5c] sm:text-[31px]">Добро пожаловать!</h2>
+              <p className="mt-3 text-base text-[#5878a7]">Войдите в свой аккаунт, чтобы продолжить</p>
             </div>
+
             {errorMessage && (
-              <div role="alert" className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                <span className="mt-0.5 font-bold">!</span><span>{errorMessage}</span>
+              <div role="alert" className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {errorMessage}
               </div>
             )}
-            <form onSubmit={handleLogin} className="space-y-5">
+
+            <form onSubmit={handleLogin} className="space-y-6">
               <div>
-                <label htmlFor="login" className="mb-2 block text-sm font-semibold text-[#18385f]">Логин или табельный номер</label>
-                <div className="group relative">
-                  <UserRound size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[#1261b2]"/>
-                  <input id="login" name="login" autoComplete="username" value={login} onChange={(e)=>setLogin(e.target.value)} placeholder="Введите логин" className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2475c5] focus:ring-4 focus:ring-blue-100" />
+                <label htmlFor="login" className="mb-2 block text-sm font-semibold text-[#092d5c]">Электронная почта или логин</label>
+                <div className="relative">
+                  <UserRound size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
+                  <input id="login" name="login" autoComplete="username" value={login} onChange={(e)=>setLogin(e.target.value)} placeholder="Введите email или логин" className="h-[55px] w-full rounded-[10px] border border-[#d9e4f1] bg-white pl-[52px] pr-4 text-[15px] text-slate-800 outline-none transition placeholder:text-[#7e98bd] focus:border-[#1769c2] focus:ring-2 focus:ring-blue-100" />
                 </div>
               </div>
               <div>
-                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#18385f]">Пароль</label>
-                <div className="group relative">
-                  <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 transition group-focus-within:text-[#1261b2]"/>
-                  <input id="password" name="password" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Введите пароль" className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-12 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-slate-300 focus:border-[#2475c5] focus:ring-4 focus:ring-blue-100" />
-                  <button type="button" aria-label={showPassword?"Скрыть пароль":"Показать пароль"} onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:text-[#124f91] focus:outline-none focus:ring-2 focus:ring-blue-200">
+                <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#092d5c]">Пароль</label>
+                <div className="relative">
+                  <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
+                  <input id="password" name="password" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Введите пароль" className="h-[55px] w-full rounded-[10px] border border-[#d9e4f1] bg-white pl-[52px] pr-12 text-[15px] text-slate-800 outline-none transition placeholder:text-[#7e98bd] focus:border-[#1769c2] focus:ring-2 focus:ring-blue-100" />
+                  <button type="button" aria-label={showPassword?"Скрыть пароль":"Показать пароль"} onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 rounded p-1 text-[#092d5c] hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200">
                     {showPassword?<EyeOff size={19}/>:<Eye size={19}/>}
                   </button>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-sm">
-                <label className="inline-flex cursor-pointer items-center gap-2.5 text-slate-600">
-                  <input type="checkbox" checked={rememberMe} onChange={(e)=>setRememberMe(e.target.checked)} className="h-4 w-4 rounded border-slate-300 accent-[#145db0] focus:ring-blue-300"/>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5 text-[13px]">
+                <label className="inline-flex cursor-pointer items-center gap-2.5 text-[#092d5c]">
+                  <input type="checkbox" checked={rememberMe} onChange={(e)=>setRememberMe(e.target.checked)} className="h-[21px] w-[21px] rounded border-slate-300 accent-[#1261b7] focus:ring-blue-300"/>
                   Запомнить меня
                 </label>
-                <button type="button" onClick={()=>setErrorMessage("Для восстановления доступа обратитесь к администратору системы.")} className="font-semibold text-[#1264b6] transition hover:text-[#083e79] hover:underline">Забыли пароль?</button>
+                <button type="button" onClick={()=>setErrorMessage("Для восстановления доступа обратитесь к администратору системы.")} className="font-medium text-[#0867c8] hover:underline">Забыли пароль?</button>
               </div>
-              <button type="submit" disabled={isLoading} className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-[#1260b3] to-[#0a4c98] px-5 text-sm font-bold text-white shadow-lg shadow-blue-900/15 transition hover:-translate-y-0.5 hover:shadow-xl hover:shadow-blue-900/20 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-65">
-                {isLoading ? <><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white"/>Выполняется вход…</> : <>Войти в систему <ArrowRight size={18} className="transition group-hover:translate-x-1"/> </>}
+
+              <button type="submit" disabled={isLoading} className="group flex h-[54px] w-full items-center justify-center gap-4 rounded-[10px] bg-[#1260bd] px-5 text-sm font-semibold text-white transition hover:bg-[#0c52a5] focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:opacity-65">
+                {isLoading ? <><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white"/>Выполняется вход…</> : <>Войти <ArrowRight size={18}/></>}
               </button>
             </form>
-            <div className="my-6 flex items-center gap-4 text-[10px] font-medium uppercase tracking-[.2em] text-slate-400"><span className="h-px flex-1 bg-slate-200"/>Безопасный доступ<span className="h-px flex-1 bg-slate-200"/></div>
-            <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
-              <span className="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-blue-50 text-[#145da9]"><KeyRound size={16}/></span>
-              <span>Доступ к системе предоставляется только авторизованным пользователям. Если у вас нет учётной записи, обратитесь к администратору.</span>
+
+            <div className="mt-10 flex items-start gap-4 text-xs leading-[1.6] text-[#5c79a4]">
+              <ShieldCheck size={29} strokeWidth={1.6} className="shrink-0 text-[#092d5c]"/>
+              <span>Только авторизованные пользователи<br />имеют доступ к системе</span>
             </div>
-            <p className="mt-7 text-center text-xs text-slate-400">© ООО «Транспортный Щит» · УНП 193992564</p>
           </div>
         </section>
       </div>
@@ -141,8 +136,8 @@ export default function LoginPage() {
 }
 
 function Feature({icon,title,description}:{icon:React.ReactNode;title:string;description:string}) {
-  return <div className="flex items-center gap-4">
-    <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/10 text-sky-200 backdrop-blur-sm">{icon}</div>
-    <div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-5 text-blue-100/70 sm:text-sm">{description}</p></div>
+  return <div className="flex items-center gap-5">
+    <div className="grid h-[50px] w-[50px] shrink-0 place-items-center rounded-full bg-[#0870c9]/80 text-white">{icon}</div>
+    <div><p className="text-[14px] font-semibold text-white">{title}</p><p className="mt-1 text-[14px] leading-5 text-white/95">{description}</p></div>
   </div>;
 }
