@@ -38,8 +38,8 @@ export default function LoginPage() {
         style={{ backgroundImage: "url('/images/taxi-background.png')" }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 18% 50%, rgba(2, 15, 35, 0.32) 0%, rgba(2, 15, 35, 0.18) 48%, rgba(2, 15, 35, 0) 78%)" }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/65 via-[#062b55]/25 to-transparent" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 18% 50%, rgba(2, 12, 28, 0.58) 0%, rgba(2, 12, 28, 0.40) 42%, rgba(2, 12, 28, 0.16) 68%, rgba(2, 12, 28, 0) 88%)" }} aria-hidden="true" />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1920px] items-center px-3 py-2 sm:px-5 sm:py-2 lg:px-[2vw] lg:py-0">
         <div className="grid w-full grid-cols-1 items-stretch gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7">
         <section className="flex flex-col justify-start gap-6 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-0">
