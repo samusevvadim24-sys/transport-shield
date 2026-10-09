@@ -61,9 +61,9 @@ export default function LoginPage() {
           </div>
 
           <div className="mt-6 grid max-w-[560px] gap-7 sm:mt-7 lg:mt-0">
-            <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
-            <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
-            <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
+            <Feature icon={<ShieldCheck size={22} strokeWidth={1.8} fill="currentColor" />} title="Забота о безопасности" description="Проверка здоровья и документов" />
+            <Feature icon={<Clock3 size={22} strokeWidth={1.8} fill="currentColor" />} title="Экономия времени" description="Автоматизация процессов" />
+            <Feature icon={<BarChart3 size={22} strokeWidth={1.8} fill="currentColor" />} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
           </div>
         </section>
 
@@ -94,14 +94,14 @@ export default function LoginPage() {
               <div>
                 <label htmlFor="login" className="mb-2 block text-sm font-semibold text-[#092d5c]">Электронная почта или логин</label>
                 <div className="relative">
-                  <UserRound size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
+                  <UserRound size={18} strokeWidth={2.2} fill="currentColor" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
                   <input id="login" name="login" autoComplete="username" value={login} onChange={(e)=>setLogin(e.target.value)} placeholder="Введите email или логин" className="h-[50px] w-full rounded-[10px] border border-[#d9e4f1] bg-white pl-[52px] pr-4 text-[15px] text-slate-800 outline-none transition placeholder:text-[#7e98bd] focus:border-[#1769c2] focus:ring-2 focus:ring-blue-100" />
                 </div>
               </div>
               <div>
                 <label htmlFor="password" className="mb-2 block text-sm font-semibold text-[#092d5c]">Пароль</label>
                 <div className="relative">
-                  <LockKeyhole size={19} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
+                  <LockKeyhole size={18} strokeWidth={2.2} fill="currentColor" className="absolute left-4 top-1/2 -translate-y-1/2 text-[#092d5c]"/>
                   <input id="password" name="password" autoComplete="current-password" type={showPassword?"text":"password"} value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="Введите пароль" className="h-[55px] w-full rounded-[10px] border border-[#d9e4f1] bg-white pl-[52px] pr-12 text-[15px] text-slate-800 outline-none transition placeholder:text-[#7e98bd] focus:border-[#1769c2] focus:ring-2 focus:ring-blue-100" />
                   <button type="button" aria-label={showPassword?"Скрыть пароль":"Показать пароль"} onClick={()=>setShowPassword(!showPassword)} className="absolute right-4 top-1/2 -translate-y-1/2 rounded p-1 text-[#092d5c] hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-200">
                     {showPassword?<EyeOff size={19}/>:<Eye size={19}/>}
@@ -129,12 +129,12 @@ export default function LoginPage() {
             </div>
 
             <button type="button" onClick={() => setErrorMessage("Вход через SSO пока не настроен. Обратитесь к администратору системы.")} className="mt-4 flex h-[51px] w-full items-center justify-center gap-3 rounded-[9px] bg-[#edf5fe] px-5 text-sm font-semibold text-[#092d5c] transition hover:bg-[#e2effd] focus:outline-none focus:ring-4 focus:ring-blue-100">
-              <KeyRound size={20} strokeWidth={1.8} />
+              <KeyRound size={18} strokeWidth={2.2} fill="currentColor" />
               Войти через SSO
             </button>
 
             <div className="mt-6 flex items-start gap-3 text-xs leading-[1.6] text-[#5c79a4]">
-              <ShieldCheck size={29} strokeWidth={1.6} className="shrink-0 text-[#092d5c]"/>
+              <ShieldCheck size={24} strokeWidth={1.8} fill="currentColor" className="shrink-0 text-[#092d5c]"/>
               <span>Только авторизованные пользователи<br />имеют доступ к системе</span>
             </div>
           </div>
