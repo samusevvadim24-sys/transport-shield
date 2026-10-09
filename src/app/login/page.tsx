@@ -44,9 +44,9 @@ export default function LoginPage() {
         <div className="grid w-full grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(500px,572px)] lg:gap-[3vw]">
         <section className="flex flex-col justify-start gap-8 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-4">
           <div className="flex items-center gap-6">
-            <div className="grid h-[106px] w-[106px] shrink-0 place-items-center"><img src="/logo.png" alt="Транспортный Щит" className="h-full w-full object-contain" /></div>
+            <div className="grid h-[106px] w-[106px] shrink-0 place-items-center"><img src="/logo.png" alt="Драйв Контроль" className="h-full w-full object-contain" /></div>
             <div>
-              <div className="text-[30px] font-bold leading-[1.15] tracking-tight sm:text-[34px]">Транспортный<br />Щит</div>
+              <div className="text-[30px] font-bold leading-[1.15] tracking-tight sm:text-[34px]">Драйв<br />Контроль</div>
               <div className="mt-2 text-[11px] font-medium uppercase leading-[1.5] tracking-[.12em] text-white/90">СИСТЕМА ПРЕДРЕЙСОВЫХ ОСМОТРОВ<br />ВОДИТЕЛЕЙ ТАКСИ</div>
             </div>
           </div>
@@ -71,8 +71,8 @@ export default function LoginPage() {
           <div className="w-full max-w-[572px] rounded-[17px] bg-white px-6 py-7 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-8 sm:py-8 xl:px-[56px] xl:py-[30px]">
             <div className="mb-6 flex items-start justify-between gap-3">
               <div className="flex items-center gap-4">
-                <img src="/logo.png" alt="Транспортный Щит" className="h-[78px] w-[78px] shrink-0 object-contain" />
-                <div className="text-[24px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Транспортный<br />Щит</div>
+                <img src="/logo.png" alt="Драйв Контроль" className="h-[78px] w-[78px] shrink-0 object-contain" />
+                <div className="text-[24px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Драйв<br />Контроль</div>
               </div>
               <button type="button" aria-label="Язык интерфейса: русский" className="inline-flex items-center gap-2 rounded-full bg-[#f5f8fc] px-3 py-2 text-sm font-medium text-[#092d5c]">
                 <Globe2 size={20} strokeWidth={1.8}/> RU <span className="text-xs">⌄</span>
