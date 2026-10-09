@@ -71,14 +71,12 @@ export default function LoginPage() {
           <div className="w-full max-w-[572px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-14 xl:py-11">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="grid h-[68px] w-[68px] shrink-0 place-items-center text-[#1266b9]">
-                  <ShieldCheck size={68} strokeWidth={1.8} />
-                </div>
-                <div className="text-[27px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Транспортный<br />Щит</div>
+                <img src="/logo.png" alt="Транспортный Щит" className="h-[68px] w-[68px] shrink-0 object-contain" />
+                <div className="text-[25px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Транспортный<br />Щит</div>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full px-2 py-2 text-sm font-medium text-[#092d5c]">
+              <button type="button" aria-label="Язык интерфейса: русский" className="inline-flex items-center gap-2 rounded-full bg-[#f5f8fc] px-3 py-2 text-sm font-medium text-[#092d5c]">
                 <Globe2 size={20} strokeWidth={1.8}/> RU <span className="text-xs">⌄</span>
-              </div>
+              </button>
             </div>
 
             <div className="mb-10">
@@ -123,6 +121,17 @@ export default function LoginPage() {
                 {isLoading ? <><span className="h-5 w-5 animate-spin rounded-full border-2 border-white/35 border-t-white"/>Выполняется вход…</> : <>Войти <ArrowRight size={18}/></>}
               </button>
             </form>
+
+            <div className="mt-6 flex items-center gap-4 text-xs font-medium text-[#6a86ae]">
+              <span className="h-px flex-1 bg-[#dce6f2]" />
+              <span>ИЛИ</span>
+              <span className="h-px flex-1 bg-[#dce6f2]" />
+            </div>
+
+            <button type="button" onClick={() => setErrorMessage("Вход через SSO пока не настроен. Обратитесь к администратору системы.")} className="mt-4 flex h-[52px] w-full items-center justify-center gap-3 rounded-[9px] bg-[#edf5fe] px-5 text-sm font-semibold text-[#092d5c] transition hover:bg-[#e2effd] focus:outline-none focus:ring-4 focus:ring-blue-100">
+              <KeyRound size={20} strokeWidth={1.8} />
+              Войти через SSO
+            </button>
 
             <div className="mt-10 flex items-start gap-4 text-xs leading-[1.6] text-[#5c79a4]">
               <ShieldCheck size={29} strokeWidth={1.6} className="shrink-0 text-[#092d5c]"/>
