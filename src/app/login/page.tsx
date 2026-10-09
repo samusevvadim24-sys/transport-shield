@@ -38,8 +38,8 @@ export default function LoginPage() {
         style={{ backgroundImage: "url('/images/taxi-background.png')" }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/65 via-[#062b55]/10 to-transparent" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 8% 50%, rgba(1, 8, 22, 0.70) 0%, rgba(1, 8, 22, 0.48) 24%, rgba(1, 8, 22, 0.16) 34%, rgba(1, 8, 22, 0) 42%)" }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#02132b]/90 via-[#041d3b]/68 to-[#06274c]/12" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 12% 50%, rgba(1, 8, 22, 0.46) 0%, rgba(1, 8, 22, 0.28) 36%, rgba(1, 8, 22, 0.08) 58%, rgba(1, 8, 22, 0) 72%)" }} aria-hidden="true" />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1920px] items-center px-5 py-5 sm:px-8 lg:px-[5.3vw] lg:py-0">
         <div className="grid w-full grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(500px,572px)] lg:gap-[3vw]">
         <section className="flex flex-col justify-start gap-8 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-4">
@@ -55,7 +55,7 @@ export default function LoginPage() {
             <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[36px] xl:text-[40px]">
               Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
-            <p className="mt-5 max-w-[500px] text-base leading-[1.45] text-white/95 sm:text-[17px]">
+            <p className="mt-5 max-w-[500px] text-base leading-[1.45] text-white sm:text-[17px]">
               Контроль состояния водителей, автомобилей<br className="hidden xl:block" /> и документов. Автоматизация медосмотров<br className="hidden xl:block" /> и управление автопарком в единой системе.
             </p>
           </div>
@@ -148,6 +148,6 @@ export default function LoginPage() {
 function Feature({icon,title,description}:{icon:React.ReactNode;title:string;description:string}) {
   return <div className="flex items-center gap-5">
     <div className="grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full bg-[#0870c9]/80 text-white">{icon}</div>
-    <div><p className="text-[14px] font-semibold text-white">{title}</p><p className="mt-1 text-[14px] leading-5 text-white/95">{description}</p></div>
+    <div><p className="text-[14px] font-semibold text-white">{title}</p><p className="mt-1 text-[14px] leading-5 text-white">{description}</p></div>
   </div>;
 }
