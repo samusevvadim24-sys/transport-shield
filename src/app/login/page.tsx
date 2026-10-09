@@ -34,7 +34,11 @@ export default function LoginPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#061d3b] text-white">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=2200&q=90')] bg-cover bg-center" />
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/taxi-background.png')" }}
+        aria-hidden="true"
+      />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/95 via-[#062b55]/80 to-[#04152d]/65" />
       <div className="absolute inset-0 opacity-25" style={{backgroundImage:"radial-gradient(circle at 68% 22%, #8bd5ff 1px, transparent 2px)",backgroundSize:"30px 30px"}} />
       <div className="relative z-10 mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 items-center gap-8 px-5 py-6 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(440px,520px)] lg:gap-12 lg:px-14 lg:py-10 xl:px-20">
