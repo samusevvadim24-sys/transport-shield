@@ -38,8 +38,8 @@ export default function LoginPage() {
         style={{ backgroundImage: "url('/images/taxi-background.png')" }}
         aria-hidden="true"
       />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#02132b]/90 via-[#041d3b]/68 to-[#06274c]/12" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 12% 50%, rgba(1, 8, 22, 0.46) 0%, rgba(1, 8, 22, 0.28) 36%, rgba(1, 8, 22, 0.08) 58%, rgba(1, 8, 22, 0) 72%)" }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#02132b]/88 via-[#041d3b]/48 to-[#06274c]/0" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at 2% 50%, rgba(1, 8, 22, 0.42) 0%, rgba(1, 8, 22, 0.24) 22%, rgba(1, 8, 22, 0.06) 42%, rgba(1, 8, 22, 0) 54%)" }} aria-hidden="true" />
       <div className="relative z-10 mx-auto flex min-h-screen max-w-[1920px] items-center px-5 py-5 sm:px-8 lg:px-[5.3vw] lg:py-0">
         <div className="grid w-full grid-cols-1 items-stretch gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(500px,572px)] lg:gap-[3vw]">
         <section className="flex flex-col justify-start gap-8 pt-2 pb-4 sm:pt-3 lg:justify-between lg:gap-0 lg:py-4">
