@@ -39,8 +39,8 @@ export default function LoginPage() {
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(460px,572px)] lg:gap-10 lg:px-[5.3vw] lg:py-7">
-        <section className="flex flex-col justify-center py-3 sm:py-6 lg:min-h-[calc(100vh-56px)] lg:py-8">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-5 px-4 py-4 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7 lg:px-[2.5vw] lg:py-3">
+        <section className="flex flex-col justify-center py-1 sm:py-3 lg:min-h-[calc(100vh-24px)] lg:py-2">
           <div className="flex items-center gap-6">
             <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
               <ShieldCheck size={76} strokeWidth={1.65} />
@@ -51,7 +51,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-12 max-w-[700px] sm:mt-16 lg:mt-[clamp(3rem,8vh,6.5rem)]">
+          <div className="mt-8 max-w-[700px] sm:mt-10 lg:mt-[clamp(2rem,5vh,4rem)]">
             <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[40px]">
               Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
@@ -60,16 +60,16 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid max-w-[560px] gap-6 sm:mt-14">
+          <div className="mt-8 grid max-w-[560px] gap-4 sm:mt-10">
             <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
             <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
             <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
           </div>
         </section>
 
-        <section className="flex items-center justify-center py-2 sm:py-4 lg:py-0">
-          <div className="w-full max-w-[572px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-14 xl:py-11">
-            <div className="mb-8 flex items-start justify-between gap-4">
+        <section className="flex items-center justify-center py-1 sm:py-2 lg:py-0">
+          <div className="w-full max-w-[540px] rounded-[18px] bg-white px-6 py-6 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-8 sm:py-7 xl:px-10 xl:py-8">
+            <div className="mb-6 flex items-start justify-between gap-3">
               <div className="flex items-center gap-4">
                 <img src="/logo.png" alt="Драйв Контроль" className="h-[68px] w-[68px] shrink-0 object-contain" />
                 <div className="text-[25px] font-bold leading-[1.02] tracking-tight text-[#092d5c]">Драйв<br />Контроль</div>
@@ -79,7 +79,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            <div className="mb-10">
+            <div className="mb-7">
               <h2 className="text-[29px] font-bold leading-tight tracking-[-.025em] text-[#092d5c] sm:text-[31px]">Добро пожаловать!</h2>
               <p className="mt-3 text-base text-[#5878a7]">Войдите в свой аккаунт, чтобы продолжить</p>
             </div>
@@ -90,7 +90,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div>
                 <label htmlFor="login" className="mb-2 block text-sm font-semibold text-[#092d5c]">Электронная почта или логин</label>
                 <div className="relative">
@@ -133,7 +133,7 @@ export default function LoginPage() {
               Войти через SSO
             </button>
 
-            <div className="mt-10 flex items-start gap-4 text-xs leading-[1.6] text-[#5c79a4]">
+            <div className="mt-6 flex items-start gap-3 text-xs leading-[1.6] text-[#5c79a4]">
               <ShieldCheck size={29} strokeWidth={1.6} className="shrink-0 text-[#092d5c]"/>
               <span>Только авторизованные пользователи<br />имеют доступ к системе</span>
             </div>
