@@ -40,7 +40,7 @@ export default function LoginPage() {
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
       <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-5 px-3 py-2 sm:px-5 sm:py-2 lg:grid-cols-[minmax(0,1fr)_minmax(420px,540px)] lg:gap-7 lg:px-[2vw] lg:py-0">
-        <section className="flex flex-col justify-center py-0 sm:py-1 lg:min-h-screen lg:py-0">
+        <section className="flex flex-col justify-start self-start pt-2 pb-4 sm:pt-3 lg:min-h-screen lg:pt-5 lg:pb-0">
           <div className="flex items-center gap-6">
             <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
               <ShieldCheck size={76} strokeWidth={1.65} />
