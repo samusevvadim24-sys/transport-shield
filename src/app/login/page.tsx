@@ -39,7 +39,7 @@ export default function LoginPage() {
         aria-hidden="true"
       />
       <div className="absolute inset-0 bg-gradient-to-r from-[#041a35]/45 via-[#062b55]/15 to-transparent" aria-hidden="true" />
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1800px] grid-cols-1 items-center gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(460px,580px)] lg:gap-10 lg:px-14 lg:py-7 xl:px-20">
+      <div className="relative z-10 mx-auto grid min-h-screen max-w-[1920px] grid-cols-1 items-center gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(460px,572px)] lg:gap-10 lg:px-[5.3vw] lg:py-7">
         <section className="flex flex-col justify-center py-3 sm:py-6 lg:min-h-[calc(100vh-56px)] lg:py-8">
           <div className="flex items-center gap-6">
             <div className="grid h-[76px] w-[76px] shrink-0 place-items-center text-sky-100">
@@ -51,7 +51,7 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="mt-12 max-w-[700px] sm:mt-16 lg:mt-[clamp(3rem,9vh,7rem)]">
+          <div className="mt-12 max-w-[700px] sm:mt-16 lg:mt-[clamp(3rem,8vh,6.5rem)]">
             <h1 className="text-[34px] font-bold leading-[1.25] tracking-[-.025em] sm:text-[38px] lg:text-[40px]">
               Безопасные водители —<br /><span className="text-sky-200">надёжные поездки</span>
             </h1>
@@ -60,7 +60,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid max-w-[560px] gap-6 sm:mt-16">
+          <div className="mt-12 grid max-w-[560px] gap-6 sm:mt-14">
             <Feature icon={<ShieldCheck size={28} strokeWidth={1.7}/>} title="Забота о безопасности" description="Проверка здоровья и документов" />
             <Feature icon={<Clock3 size={28} strokeWidth={1.7}/>} title="Экономия времени" description="Автоматизация процессов" />
             <Feature icon={<BarChart3 size={28} strokeWidth={1.7}/>} title="Полная прозрачность" description="Отчёты и аналитика в реальном времени" />
@@ -68,7 +68,7 @@ export default function LoginPage() {
         </section>
 
         <section className="flex items-center justify-center py-2 sm:py-4 lg:py-0">
-          <div className="w-full max-w-[580px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-16 xl:py-11">
+          <div className="w-full max-w-[572px] rounded-[22px] bg-white px-7 py-8 text-[#092d5c] shadow-[0_20px_70px_rgba(0,12,35,0.2)] sm:px-10 sm:py-10 xl:px-14 xl:py-11">
             <div className="mb-8 flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="grid h-[68px] w-[68px] shrink-0 place-items-center text-[#1266b9]">
